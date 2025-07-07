@@ -8,7 +8,7 @@ The output is structured using Pydantic models for better organization and valid
 import json
 import os
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 import requests
 from dotenv import load_dotenv
@@ -105,6 +105,11 @@ class KeyStats(BaseModel):
     )
 
 
+class Objection(BaseModel):
+    objection: str = Field(description="Common objection a restaurant might have")
+    response: str = Field(description="How to address the objection")
+
+
 class PitchStrategy(BaseModel):
     opening_hook: str = Field(
         description="Attention-grabbing opening line for the pitch"
@@ -115,7 +120,7 @@ class PitchStrategy(BaseModel):
     social_proof: List[str] = Field(
         description="Examples of similar restaurants that have succeeded with Too Good To Go"
     )
-    objection_handling: Dict[str, str] = Field(
+    objection_handling: List[Objection] = Field(
         description="Common objections and how to address them"
     )
     urgency_closing: str = Field(
@@ -134,6 +139,12 @@ class PitchDeck(BaseModel):
     )
     recommended_approach: str = Field(
         description="Overall recommended approach for pitching to this restaurant"
+    )
+    lead_temperature: LeadTemperature = Field(
+        description="Assessment of how likely the restaurant is to convert (cold, warm, hot)"
+    )
+    best_contact_time: str = Field(
+        description="Best time to contact the restaurant based on their business hours and type of establishment"
     )
 
 
@@ -367,102 +378,13 @@ def create_pitch_deck(query):
     Use specific details about the restaurant to personalize the pitch.
     """
 
-    # Define the schema directly as a dictionary (compatible with Gemini API)
-    schema = {
-        "type": "object",
-        "properties": {
-            "contact_info": {
-                "type": "object",
-                "properties": {
-                    "name": {"type": "string"},
-                    "address": {"type": "string"},
-                    "phone": {"type": "string"},
-                    "website": {"type": "string"},
-                    "email": {"type": "string"},
-                    "owner": {"type": "string"},
-                    "founded": {"type": "string"},
-                    "cuisine_type": {"type": "array", "items": {"type": "string"}},
-                    "opening_hours": {"type": "string"},
-                },
-                "required": ["name", "address"],
-            },
-            "decision_maker_profile": {
-                "type": "object",
-                "properties": {
-                    "summary": {"type": "string"},
-                    "pain_points": {"type": "array", "items": {"type": "string"}},
-                    "values": {"type": "array", "items": {"type": "string"}},
-                    "communication_style": {"type": "string"},
-                },
-                "required": ["summary", "pain_points", "values"],
-            },
-            "key_stats": {
-                "type": "object",
-                "properties": {
-                    "user_rating": {"type": "number"},
-                    "user_rating_count": {"type": "integer"},
-                    "sustainability_signal": {
-                        "type": "string",
-                        "enum": ["low", "medium", "high", "unknown"],
-                    },
-                    "digital_readiness": {
-                        "type": "string",
-                        "enum": ["low", "medium", "high", "unknown"],
-                    },
-                    "estimated_food_waste": {"type": "string"},
-                    "estimated_revenue_potential": {"type": "string"},
-                },
-                "required": ["sustainability_signal", "digital_readiness"],
-            },
-            "pitch_strategy": {
-                "type": "object",
-                "properties": {
-                    "opening_hook": {"type": "string"},
-                    "value_proposition": {"type": "string"},
-                    "social_proof": {"type": "array", "items": {"type": "string"}},
-                    "objection_handling": {
-                        "type": "array",
-                        "items": {
-                            "type": "object",
-                            "properties": {
-                                "objection": {"type": "string"},
-                                "response": {"type": "string"},
-                            },
-                            "required": ["objection", "response"],
-                        },
-                    },
-                    "urgency_closing": {"type": "string"},
-                },
-                "required": [
-                    "opening_hook",
-                    "value_proposition",
-                    "social_proof",
-                    "urgency_closing",
-                ],
-            },
-            "additional_notes": {"type": "array", "items": {"type": "string"}},
-            "recommended_approach": {"type": "string"},
-            "lead_temperature": {"type": "string", "enum": ["cold", "warm", "hot"]},
-            "best_contact_time": {"type": "string"},
-        },
-        "required": [
-            "contact_info",
-            "decision_maker_profile",
-            "key_stats",
-            "pitch_strategy",
-            "recommended_approach",
-            "lead_temperature",
-            "best_contact_time",
-        ],
-    }
-
     # Generate the structured pitch deck content
     pitch_deck_response = client.models.generate_content(
         model="gemini-2.5-flash",
         contents=pitch_deck_prompt,
         config={
             "response_mime_type": "application/json",
-            "response_schema": schema,
+            "response_schema": PitchDeck,
         },
     )
 
@@ -470,8 +392,71 @@ def create_pitch_deck(query):
 
     # Parse the structured output
     try:
-        # Get the parsed JSON object
-        pitch_deck = json.loads(pitch_deck_response.text)
+        # Use the parsed response directly
+        if hasattr(pitch_deck_response, "parsed"):
+            # Get the parsed Pydantic object with proper enum handling
+            pitch_deck_model = pitch_deck_response.parsed
+
+            # Convert to dictionary with enum values as strings
+            pitch_deck = pitch_deck_model.model_dump()
+
+            # Extract the enum values properly
+            if isinstance(
+                pitch_deck_model.key_stats.sustainability_signal, SustainabilityLevel
+            ):
+                pitch_deck["key_stats"][
+                    "sustainability_signal"
+                ] = pitch_deck_model.key_stats.sustainability_signal.value
+
+            if isinstance(
+                pitch_deck_model.key_stats.digital_readiness, DigitalReadiness
+            ):
+                pitch_deck["key_stats"][
+                    "digital_readiness"
+                ] = pitch_deck_model.key_stats.digital_readiness.value
+
+            if isinstance(pitch_deck_model.lead_temperature, LeadTemperature):
+                pitch_deck["lead_temperature"] = pitch_deck_model.lead_temperature.value
+        else:
+            # Fallback to manual JSON parsing if parsed attribute is not available
+            pitch_deck = json.loads(pitch_deck_response.text)
+
+            # Process enum values before returning
+            # Helper function to clean enum values
+            def extract_enum_value(value):
+                if not isinstance(value, str):
+                    value = str(value)
+                # Check for enum class prefixes and extract the value part
+                if "." in value:
+                    parts = value.split(".")
+                    if len(parts) == 2:
+                        return parts[1].lower()
+                return value
+
+            # Handle sustainability signal
+            if (
+                "key_stats" in pitch_deck
+                and "sustainability_signal" in pitch_deck["key_stats"]
+            ):
+                pitch_deck["key_stats"]["sustainability_signal"] = extract_enum_value(
+                    pitch_deck["key_stats"]["sustainability_signal"]
+                )
+
+            # Handle digital readiness
+            if (
+                "key_stats" in pitch_deck
+                and "digital_readiness" in pitch_deck["key_stats"]
+            ):
+                pitch_deck["key_stats"]["digital_readiness"] = extract_enum_value(
+                    pitch_deck["key_stats"]["digital_readiness"]
+                )
+
+            # Handle lead temperature
+            if "lead_temperature" in pitch_deck:
+                pitch_deck["lead_temperature"] = extract_enum_value(
+                    pitch_deck["lead_temperature"]
+                )
+
         return pitch_deck
     except Exception as e:
         print(f"Error parsing structured output: {e}")
@@ -515,8 +500,11 @@ def print_pitch_deck(pitch_deck):
         print(
             f"Rating: {pitch_deck['key_stats']['user_rating']}/5 ({pitch_deck['key_stats'].get('user_rating_count', 'N/A')} reviews)"
         )
+
+    # Print sustainability signal and digital readiness
     print(f"Sustainability Signal: {pitch_deck['key_stats']['sustainability_signal']}")
     print(f"Digital Readiness: {pitch_deck['key_stats']['digital_readiness']}")
+
     if (
         "estimated_food_waste" in pitch_deck["key_stats"]
         and pitch_deck["key_stats"]["estimated_food_waste"]
@@ -553,7 +541,10 @@ def print_pitch_deck(pitch_deck):
     print(pitch_deck["recommended_approach"])
 
     print("\n=== LEAD ASSESSMENT ===\n")
+
+    # Print lead temperature
     print(f"Lead Temperature: {pitch_deck['lead_temperature']}")
+
     print(f"Best Contact Time: {pitch_deck['best_contact_time']}")
 
 
