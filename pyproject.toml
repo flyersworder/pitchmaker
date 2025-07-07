@@ -1,0 +1,11 @@
+[project]
+name = "pitchmaker"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "google-genai>=1.24.0",
+    "ipykernel>=6.29.5",
+    "pip>=25.1.1",
+]
