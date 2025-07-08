@@ -242,7 +242,6 @@ def search_places(text_query: str, fields: list[str]) -> dict:
         return {"error": str(e)}
     except Exception as e:
         logger.error(f"Unexpected Error: {e}")
-        print(f"Unexpected Error: {e}")
         return {"error": str(e)}
 
 
@@ -342,30 +341,64 @@ def create_pitch_deck(query):
     )
     restaurant_address = restaurant.get("formattedAddress", "Address not available")
 
-    print(f"Found restaurant: {restaurant_name} at {restaurant_address}")
+    logger.info(f"Found restaurant: {restaurant_name} at {restaurant_address}")
 
     # Step 2: Use Google Search to enrich the information
-    print("\nStep 2: Enriching restaurant information with Google Search...\n")
+    logger.info("\nStep 2: Enriching restaurant information with Google Search...\n")
 
     # Create Google Search tool
     grounding_tool = types.Tool(google_search=types.GoogleSearch())
     search_config = types.GenerateContentConfig(tools=[grounding_tool])
 
     # Make the request with Google Search tool
-    enrichment_prompt = f"""Find detailed information about the restaurant '{restaurant_name}' located at {restaurant_address}' specifically focused on aspects relevant for a TOO GOOD TO GO partnership.
-    Focus on:
-    1. Food waste management practices (if any)
-    2. Sustainability initiatives or eco-friendly practices
-    3. Menu variety and items that might be suitable for surplus food packages
-    4. Operational challenges that might lead to food waste (e.g., large menu, daily specials, buffet offerings)
-    5. Busy vs. slow periods that might affect food surplus
-    6. Management style and decision-making approach
-    7. Recent changes (expansion, renovation, menu changes) that might affect operations
-    8. Customer sentiment about value and quality
-    9. Competitors nearby who are already using food waste reduction services
-    10. Any unique challenges in their business model related to inventory or food preparation
-    11. Local community engagement or neighborhood reputation
-    12. Any mentions of excess food, portions, or quantity in reviews
+    enrichment_prompt = f"""
+    ## TASK
+    You are a specialized restaurant analyst for TOO GOOD TO GO, researching {restaurant_name} located at {restaurant_address} to identify partnership opportunities. Conduct comprehensive research and provide ONLY factual, evidence-based information.
+
+    ## SEARCH STRATEGY
+    1. Search for the restaurant's official website, social media profiles, and online menu
+    2. Find recent reviews across multiple platforms (Google, Yelp, TripAdvisor, local food blogs)
+    3. Look for local news articles or business listings mentioning the restaurant
+    4. Identify information about the restaurant's operations, management, and customer experiences
+
+    ## REQUIRED INFORMATION
+    Organize your findings into these specific categories:
+
+    ### FOOD WASTE POTENTIAL
+    - Menu complexity and variety (more items = higher waste potential)
+    - Daily specials or buffet offerings
+    - Fresh ingredients with short shelf life (e.g., seafood, sushi)
+    - Portion sizes mentioned in reviews
+    - Any explicit mentions of food waste practices or sustainability initiatives
+
+    ### OPERATIONAL PATTERNS
+    - Peak business hours vs. slow periods
+    - Seasonal fluctuations in business
+    - Recent changes: expansion, renovation, menu updates, management changes
+    - Operational challenges mentioned in reviews or articles
+    - Delivery/takeout vs. dine-in balance
+
+    ### MANAGEMENT INSIGHTS
+    - Owner/manager names and management style if available
+    - Decision-making approach (traditional vs. innovative)
+    - Responsiveness to customer feedback
+    - Involvement in community or local events
+    - Any mentions of business priorities or values
+
+    ### COMPETITIVE LANDSCAPE
+    - Similar restaurants in the area
+    - Local competitors using food waste reduction services
+    - Unique selling points compared to competitors
+    - Position in the local market (upscale, mid-range, budget)
+
+    ### CUSTOMER SENTIMENT
+    - Overall satisfaction with food quality and value
+    - Specific praise or complaints about food portions or quality
+    - Mentions of price-to-value ratio
+    - Customer demographic insights
+
+    ## OUTPUT FORMAT
+    Provide factual, concise information in bullet points under each category. If information is not available for certain categories, explicitly state this rather than making assumptions. Focus on information that would be most relevant for a TOO GOOD TO GO partnership opportunity.
     """
 
     search_response = client.models.generate_content(
@@ -374,10 +407,11 @@ def create_pitch_deck(query):
         config=search_config,
     )
 
-    print("Google Search enrichment completed.")
+    logger.info("Google Search enrichment completed.")
+    logger.info(f"Google Search response: {search_response.text}")
 
     # Step 3: Generate the pitch deck content
-    print("\nStep 3: Creating TOO GOOD TO GO pitch deck content...\n")
+    logger.info("\nStep 3: Creating TOO GOOD TO GO pitch deck content...\n")
 
     # Format restaurant data for the prompt, handling nested structures and missing fields
     restaurant_data = {
@@ -456,28 +490,63 @@ def create_pitch_deck(query):
 
     # Create the structured pitch deck prompt
     pitch_deck_prompt = f"""
-    You are a professional pitch deck creator for TOO GOOD TO GO, a company that helps restaurants reduce food waste by selling surplus food at a discount.
+    ## ROLE AND OBJECTIVE
+    You are an expert pitch deck creator for TOO GOOD TO GO, specializing in crafting evidence-based, persuasive sales materials. Your goal is to create a highly effective, personalized pitch deck for {restaurant_name} that will maximize conversion likelihood during an initial phone call pitch.
 
-    Create a structured pitch deck for a TOO GOOD TO GO sales representative to use when pitching to {restaurant_name}.
-
+    ## AVAILABLE DATA
     RESTAURANT INFORMATION FROM PLACES API:
+    ```json
     {json.dumps(restaurant_data, indent=2)}
+    ```
 
     ADDITIONAL INFORMATION FROM GOOGLE SEARCH:
+    ```
     {search_response.text}
+    ```
 
-    Your response should include:
+    ## INSTRUCTIONS
+    1. Base all content on verifiable evidence from the provided data. If information is missing, indicate this clearly rather than making assumptions.
+    2. Create a structured pitch deck with the following sections:
 
-    1. Contact information about the restaurant (name, address, phone, website, etc.)
-    2. A profile of the likely decision maker or management style
-    3. Key statistics about the restaurant (ratings, sustainability signals, digital readiness)
-    4. Pitch strategies (including opening hook, social proof examples, and urgency closing) that leverage effective behavior science theories (e.g., social proof, scarcity, reciprocity, loss aversion, authority) to maximize conversion likelihood
-    5. Any additional information, insights, or context from behavioral science that would help the sales representative tailor their approach
-    6. Lead temperature assessment (cold, warm, or hot) based on how likely the restaurant is to convert
-    7. Best time to contact the restaurant based on their business hours and type of establishment
+    ## REQUIRED SECTIONS
+    1. **Contact Information**: Complete details about {restaurant_name} (name, address, phone, website, cuisine type, etc.)
 
-    Make the pitch deck concise, persuasive, and tailored specifically to {restaurant_name} based on the information provided.
-    Use specific details about the restaurant to personalize the pitch.
+    2. **Decision Maker Profile**: Evidence-based assessment of management style, priorities, and pain points. Include:
+       - Likely decision-making approach based on business operations
+       - Key pain points related to food waste or inventory management
+       - Core values that would align with TOO GOOD TO GO's mission
+
+    3. **Key Statistics**: Data-driven assessment including:
+       - Rating and review summary
+       - Sustainability signal (high/medium/low) with specific justification
+       - Digital readiness assessment (high/medium/low) with specific justification
+       - Estimated food waste potential and revenue opportunity
+
+    4. **Phone Call Pitch Strategy**: Scientifically-grounded approach using behavioral science principles:
+       - Opening hook that quickly engages and addresses specific pain points (10-15 seconds)
+       - Value proposition tailored to {restaurant_name}'s specific situation with clear vocal emphasis points
+       - Social proof examples relevant to their location, cuisine type, or business model that work well in conversation
+       - Responses to 2-3 likely objections that might arise during the call
+       - Conversation transitions and questions to maintain engagement
+       - Urgency-based closing that creates momentum toward scheduling a follow-up meeting
+
+    5. **Behavioral Science Insights**: Specific tactical recommendations based on:
+       - Which behavioral principles (social proof, scarcity, etc.) will be most effective for this specific restaurant
+       - How to frame the TOO GOOD TO GO value proposition to align with the restaurant's values
+       - Psychological triggers that would resonate with this specific decision maker
+
+    6. **Lead Assessment**:
+       - Temperature rating (cold/warm/hot) with specific justification
+       - Optimal contact time based on business operations and decision maker availability
+
+    ## TONE AND STYLE
+    Make the pitch deck concise, persuasive, and specifically tailored to {restaurant_name} for an effective phone call pitch.
+    Use concrete details from the data to personalize every aspect of the pitch.
+    Focus on conversational language, clear talking points, and actionable insights that will help the sales representative engage the listener and move toward scheduling a follow-up meeting.
+    Remember that this is for a verbal phone conversation, so include natural transitions, pauses, and questions that would work well in spoken dialogue.
+
+    ## LANGUAGE REQUIREMENTS
+    IMPORTANT: Create the entire pitch deck in English only, regardless of the restaurant's location or language. Do not include any content in other languages, even for greetings or cultural references. The pitch should be fully accessible to English-speaking sales representatives.
     """
 
     # Generate the structured pitch deck content
