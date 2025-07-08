@@ -125,9 +125,15 @@ class KeyStats(BaseModel):
         default=SustainabilityLevel.UNKNOWN,
         description="Estimated sustainability level based on available information",
     )
+    sustainability_reasoning: Optional[str] = Field(
+        default=None, description="Reasoning behind the sustainability level assessment"
+    )
     digital_readiness: DigitalReadiness = Field(
         default=DigitalReadiness.UNKNOWN,
         description="Estimated digital readiness based on online presence",
+    )
+    digital_readiness_reasoning: Optional[str] = Field(
+        default=None, description="Reasoning behind the digital readiness assessment"
     )
     estimated_food_waste: Optional[str] = Field(
         default=None, description="Estimated daily/weekly food waste"
@@ -167,13 +173,16 @@ class PitchDeck(BaseModel):
     pitch_strategy: PitchStrategy
     additional_notes: Optional[List[str]] = Field(
         default=None,
-        description="Any additional information that might help with the pitch",
+        description="Any additional insights or recommendations for the sales rep",
     )
     recommended_approach: str = Field(
         description="Overall recommended approach for pitching to this restaurant"
     )
     lead_temperature: LeadTemperature = Field(
         description="Assessment of how likely the restaurant is to convert (cold, warm, hot)"
+    )
+    lead_temperature_reasoning: Optional[str] = Field(
+        default=None, description="Reasoning behind the lead temperature assessment"
     )
     best_contact_time: str = Field(
         description="Best time to contact the restaurant based on their business hours and type of establishment"
@@ -519,8 +528,8 @@ def create_pitch_deck(query):
 
     3. **Key Statistics**: Data-driven assessment including:
        - Rating and review summary
-       - Sustainability signal (high/medium/low) with specific justification
-       - Digital readiness assessment (high/medium/low) with specific justification
+       - Sustainability signal (high/medium/low) with detailed reasoning for the assessment
+       - Digital readiness assessment (high/medium/low) with detailed reasoning for the assessment
        - Estimated food waste potential and revenue opportunity
 
     4. **Phone Call Pitch Strategy**: Scientifically-grounded approach using behavioral science principles:
@@ -537,7 +546,7 @@ def create_pitch_deck(query):
        - Psychological triggers that would resonate with this specific decision maker
 
     6. **Lead Assessment**:
-       - Temperature rating (cold/warm/hot) with specific justification
+       - Temperature rating (cold/warm/hot) with detailed reasoning for the assessment
        - Optimal contact time based on business operations and decision maker availability
 
     ## TONE AND STYLE
@@ -674,9 +683,20 @@ def print_pitch_deck(pitch_deck):
             f"Rating: {pitch_deck['key_stats']['user_rating']}/5 ({pitch_deck['key_stats'].get('user_rating_count', 'N/A')} reviews)"
         )
 
-    # Print sustainability signal and digital readiness
+    # Print sustainability signal and digital readiness with reasoning
     print(f"Sustainability Signal: {pitch_deck['key_stats']['sustainability_signal']}")
+    if (
+        "sustainability_reasoning" in pitch_deck["key_stats"]
+        and pitch_deck["key_stats"]["sustainability_reasoning"]
+    ):
+        print(f"Reasoning: {pitch_deck['key_stats']['sustainability_reasoning']}")
+
     print(f"Digital Readiness: {pitch_deck['key_stats']['digital_readiness']}")
+    if (
+        "digital_readiness_reasoning" in pitch_deck["key_stats"]
+        and pitch_deck["key_stats"]["digital_readiness_reasoning"]
+    ):
+        print(f"Reasoning: {pitch_deck['key_stats']['digital_readiness_reasoning']}")
 
     if (
         "estimated_food_waste" in pitch_deck["key_stats"]
@@ -715,8 +735,13 @@ def print_pitch_deck(pitch_deck):
 
     print("\n=== LEAD ASSESSMENT ===\n")
 
-    # Print lead temperature
+    # Print lead temperature with reasoning
     print(f"Lead Temperature: {pitch_deck['lead_temperature']}")
+    if (
+        "lead_temperature_reasoning" in pitch_deck
+        and pitch_deck["lead_temperature_reasoning"]
+    ):
+        print(f"Reasoning: {pitch_deck['lead_temperature_reasoning']}")
 
     print(f"Best Contact Time: {pitch_deck['best_contact_time']}")
 
