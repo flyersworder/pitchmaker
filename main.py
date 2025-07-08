@@ -230,12 +230,31 @@ def create_pitch_deck(query):
         "places.types",
         "places.primaryType",
         "places.photos",
+        "places.googleMapsUri",
+        "places.shortFormattedAddress",
         # Additional details (Text Search Enterprise SKU)
         "places.priceLevel",
         "places.rating",
         "places.userRatingCount",
         "places.websiteUri",
         "places.internationalPhoneNumber",
+        "places.currentOpeningHours",
+        "places.regularOpeningHours",
+        # Atmosphere and offerings (Enterprise + Atmosphere SKU)
+        "places.delivery",
+        "places.dineIn",
+        "places.takeout",
+        "places.outdoorSeating",
+        "places.reservable",
+        "places.goodForChildren",
+        "places.goodForGroups",
+        "places.servesBreakfast",
+        "places.servesLunch",
+        "places.servesDinner",
+        "places.servesVegetarianFood",
+        "places.editorialSummary",
+        "places.reviews",
+        "places.reviewSummary",
     ]
 
     # Directly call the search_places function
@@ -291,18 +310,20 @@ def create_pitch_deck(query):
     search_config = types.GenerateContentConfig(tools=[grounding_tool])
 
     # Make the request with Google Search tool
-    enrichment_prompt = f"""Find detailed information about the restaurant '{restaurant_name}' located at {restaurant_address}.
+    enrichment_prompt = f"""Find detailed information about the restaurant '{restaurant_name}' located at {restaurant_address}' specifically focused on aspects relevant for a TOO GOOD TO GO partnership.
     Focus on:
-    1. Type of cuisine and specialties
-    2. Customer reviews and ratings
-    3. Sustainability practices (if any)
-    4. Food waste management (if any)
-    5. Popular dishes
-    6. Opening hours
-    7. Busy times and peak hours
-    8. Average price range
-    9. Target customer demographic
-    10. Any unique selling points or special features
+    1. Food waste management practices (if any)
+    2. Sustainability initiatives or eco-friendly practices
+    3. Menu variety and items that might be suitable for surplus food packages
+    4. Operational challenges that might lead to food waste (e.g., large menu, daily specials, buffet offerings)
+    5. Busy vs. slow periods that might affect food surplus
+    6. Management style and decision-making approach
+    7. Recent changes (expansion, renovation, menu changes) that might affect operations
+    8. Customer sentiment about value and quality
+    9. Competitors nearby who are already using food waste reduction services
+    10. Any unique challenges in their business model related to inventory or food preparation
+    11. Local community engagement or neighborhood reputation
+    12. Any mentions of excess food, portions, or quantity in reviews
     """
 
     search_response = client.models.generate_content(
@@ -325,7 +346,7 @@ def create_pitch_deck(query):
         ),
     }
 
-    # Add fields that might be directly in the restaurant object
+    # Add basic fields that might be directly in the restaurant object
     for field, display_name in [
         ("priceLevel", "price_level"),
         ("websiteUri", "website"),
@@ -333,6 +354,8 @@ def create_pitch_deck(query):
         ("rating", "rating"),
         ("userRatingCount", "user_rating_count"),
         ("businessStatus", "business_status"),
+        ("googleMapsUri", "google_maps_url"),
+        ("shortFormattedAddress", "short_address"),
     ]:
         if field in restaurant:
             restaurant_data[display_name] = restaurant[field]
@@ -343,10 +366,47 @@ def create_pitch_deck(query):
     elif "primaryType" in restaurant:
         restaurant_data["primary_type"] = restaurant["primaryType"]
 
-    # Add any other available fields that might be useful
+    # Add photos if available
     if "photos" in restaurant and restaurant["photos"]:
         restaurant_data["has_photos"] = True
         restaurant_data["photo_count"] = len(restaurant["photos"])
+
+    # Add opening hours
+    if "currentOpeningHours" in restaurant:
+        restaurant_data["opening_hours"] = restaurant["currentOpeningHours"]
+    elif "regularOpeningHours" in restaurant:
+        restaurant_data["opening_hours"] = restaurant["regularOpeningHours"]
+
+    # Add restaurant features and services
+    for feature, display_name in [
+        ("delivery", "offers_delivery"),
+        ("dineIn", "offers_dine_in"),
+        ("takeout", "offers_takeout"),
+        ("outdoorSeating", "has_outdoor_seating"),
+        ("reservable", "is_reservable"),
+        ("goodForChildren", "good_for_children"),
+        ("goodForGroups", "good_for_groups"),
+    ]:
+        if feature in restaurant:
+            restaurant_data[display_name] = restaurant[feature]
+
+    # Add meal service information
+    for service, display_name in [
+        ("servesBreakfast", "serves_breakfast"),
+        ("servesLunch", "serves_lunch"),
+        ("servesDinner", "serves_dinner"),
+        ("servesVegetarianFood", "serves_vegetarian"),
+    ]:
+        if service in restaurant:
+            restaurant_data[display_name] = restaurant[service]
+
+    # Add editorial and review information
+    if "editorialSummary" in restaurant:
+        restaurant_data["editorial_summary"] = restaurant["editorialSummary"]
+    if "reviewSummary" in restaurant:
+        restaurant_data["review_summary"] = restaurant["reviewSummary"]
+    if "reviews" in restaurant:
+        restaurant_data["reviews"] = restaurant["reviews"]
 
     # Print the complete restaurant data for debugging
     print("\nRestaurant data from Places API:")
