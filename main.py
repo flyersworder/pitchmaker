@@ -228,8 +228,8 @@ def search_places(text_query: str, fields: list[str]) -> dict:
         logger.info(
             f"Found {len(data.get('places', []))} places for query: {text_query}"
         )
-        # Return the first place found
-        return data["places"][0]
+        # Return all places found
+        return data["places"]
 
     except requests.exceptions.RequestException as e:
         logger.error(f"Error making Places API request: {e}")
@@ -333,9 +333,9 @@ def create_pitch_deck(query):
             logger.error("Still could not find the restaurant.")
             return f"Could not find information about a restaurant named '{restaurant_name_only}'."
 
-    # At this point, places_data should be a single restaurant object
-    # (the first/most relevant result from the search)
-    restaurant = places_data
+    # At this point, places_data should be a list of restaurant objects
+    # Select the first/most relevant result for pitch deck generation
+    restaurant = places_data[0] if isinstance(places_data, list) else places_data
     restaurant_name = restaurant.get("displayName", {}).get(
         "text", "Unknown Restaurant"
     )
@@ -387,6 +387,7 @@ def create_pitch_deck(query):
 
     ### COMPETITIVE LANDSCAPE
     - Similar restaurants in the area
+    - Existing TOO GOOD TO GO partners in the same region or with similar cuisine type
     - Local competitors using food waste reduction services
     - Unique selling points compared to competitors
     - Position in the local market (upscale, mid-range, budget)
@@ -525,7 +526,7 @@ def create_pitch_deck(query):
     4. **Phone Call Pitch Strategy**: Scientifically-grounded approach using behavioral science principles:
        - Opening hook that quickly engages and addresses specific pain points (10-15 seconds)
        - Value proposition tailored to {restaurant_name}'s specific situation with clear vocal emphasis points
-       - Social proof examples relevant to their location, cuisine type, or business model that work well in conversation
+       - Social proof examples that work well in conversation, specifically mentioning existing TOO GOOD TO GO partners in the same region or with similar cuisine type when possible
        - Responses to 2-3 likely objections that might arise during the call
        - Conversation transitions and questions to maintain engagement
        - Urgency-based closing that creates momentum toward scheduling a follow-up meeting
