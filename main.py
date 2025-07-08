@@ -471,8 +471,8 @@ def create_pitch_deck(query):
     1. Contact information about the restaurant (name, address, phone, website, etc.)
     2. A profile of the likely decision maker or management style
     3. Key statistics about the restaurant (ratings, sustainability signals, digital readiness)
-    4. Pitch strategies including opening hook, social proof examples, and urgency closing
-    5. Any additional information that would help the sales representative
+    4. Pitch strategies (including opening hook, social proof examples, and urgency closing) that leverage effective behavior science theories (e.g., social proof, scarcity, reciprocity, loss aversion, authority) to maximize conversion likelihood
+    5. Any additional information, insights, or context from behavioral science that would help the sales representative tailor their approach
     6. Lead temperature assessment (cold, warm, or hot) based on how likely the restaurant is to convert
     7. Best time to contact the restaurant based on their business hours and type of establishment
 
