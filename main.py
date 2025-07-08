@@ -5,8 +5,11 @@ It uses the Google Places API to extract restaurant information and enriches it 
 The output is structured using Pydantic models for better organization and validation.
 """
 
+import argparse
 import json
+import logging
 import os
+import sys
 from enum import Enum
 from typing import List, Optional
 
@@ -15,6 +18,35 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
+
+
+# Configure logging
+def setup_logging(log_level=logging.INFO):
+    """Set up logging configuration"""
+    logger = logging.getLogger("pitchmaker")
+    logger.setLevel(log_level)
+
+    # Create console handler and set level
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setLevel(log_level)
+
+    # Create formatter
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+
+    # Add formatter to console handler
+    console_handler.setFormatter(formatter)
+
+    # Add console handler to logger
+    logger.addHandler(console_handler)
+
+    return logger
+
+
+# Initialize logger
+logger = setup_logging()
 
 # Load environment variables from .env file
 load_dotenv()
@@ -160,52 +192,72 @@ def search_places(text_query: str, fields: list[str]) -> dict:
     Returns:
         A dictionary containing the API response or error information.
     """
+    # Get the API key from environment variables
     api_key = os.getenv("GOOGLE_MAPS_API_KEY")
     if not api_key:
-        raise ValueError("GOOGLE_MAPS_API_KEY not found in environment variables.")
+        logger.error("GOOGLE_MAPS_API_KEY environment variable not set.")
+        return {"error": "API key not found"}
 
-    url = "https://places.googleapis.com/v1/places:searchText"
-
+    # Construct the request URL
+    base_url = "https://places.googleapis.com/v1/places:searchText"
     headers = {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": api_key,
         "X-Goog-FieldMask": ",".join(fields),
     }
 
-    data = {"textQuery": text_query}
+    # Prepare the request payload
+    payload = {"textQuery": text_query}
 
-    print(f"API Request - URL: {url}")
-    print(f"API Request - Headers: {headers}")
-    print(f"API Request - Data: {data}")
+    logger.debug(f"Searching for places with query: {text_query}")
+    logger.debug(f"Requesting fields: {', '.join(fields)}")
 
     try:
-        response = requests.post(url, json=data, headers=headers)
-        response.raise_for_status()  # Raise an exception for 4XX/5XX responses
-        return response.json()
-    except requests.exceptions.HTTPError as e:
-        print(f"HTTP Error: {e}")
-        print(f"Response content: {e.response.text}")
-        return {"error": str(e), "status_code": e.response.status_code}
-    except requests.exceptions.ConnectionError as e:
-        print(f"Connection Error: {e}")
+        # Make the API request
+        response = requests.post(base_url, json=payload, headers=headers)
+        response.raise_for_status()  # Raise an exception for HTTP errors
+
+        # Parse the response
+        data = response.json()
+
+        # Check if places were found
+        if "places" not in data or not data["places"]:
+            logger.warning(f"No places found for query: {text_query}")
+            return {"error": "No places found", "query": text_query}
+
+        logger.info(
+            f"Found {len(data.get('places', []))} places for query: {text_query}"
+        )
+        # Return the first place found
+        return data["places"][0]
+
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error making Places API request: {e}")
         return {"error": str(e)}
-    except requests.exceptions.Timeout as e:
-        print(f"Timeout Error: {e}")
+    except ValueError as e:
+        logger.error(f"Error parsing Places API response: {e}")
         return {"error": str(e)}
     except requests.exceptions.RequestException as e:
-        print(f"Request Exception: {e}")
+        logger.error(f"Request Exception: {e}")
         return {"error": str(e)}
     except Exception as e:
+        logger.error(f"Unexpected Error: {e}")
         print(f"Unexpected Error: {e}")
         return {"error": str(e)}
 
 
 def create_pitch_deck(query):
     """Create a pitch deck for TOO GOOD TO GO sales rep based on a restaurant query."""
-    client = genai.Client()
+    # Initialize the Google Gemini API client
+    api_key = os.getenv("GOOGLE_API_KEY")
+    if not api_key:
+        logger.error("GOOGLE_API_KEY environment variable not set.")
+        return {"error": "API key not found"}
 
-    print(f"\nUser query: {query}")
-    print("Step 1: Extracting restaurant information using Places API...\n")
+    client = genai.Client(api_key=api_key)
+
+    logger.info(f"Processing user query: {query}")
+    logger.info("Step 1: Extracting restaurant information using Places API...")
 
     # Step 1: Extract the restaurant name and location from the query
     extraction_prompt = f"""Extract ONLY the restaurant name and its location from this query: '{query}'.
@@ -218,7 +270,7 @@ def create_pitch_deck(query):
     )
 
     search_query = extraction_response.text.strip()
-    print(f"Extracted search query: {search_query}")
+    logger.info(f"Extracted search query: {search_query}")
 
     # Define the fields we want to retrieve from the Places API
     # Using a more focused set of essential fields
@@ -258,43 +310,33 @@ def create_pitch_deck(query):
     ]
 
     # Directly call the search_places function
-    print(f"Searching for: {search_query}")
+    logger.info(f"Searching for: {search_query}")
     places_data = search_places(search_query, fields_to_extract)
 
     # Check if we found any places or if there was an error
     if not places_data:
-        print("No data returned from search_places tool.")
+        logger.warning("No data returned from search_places tool.")
         return (
             f"Could not find information about a restaurant matching '{search_query}'."
         )
 
     if "error" in places_data:
-        print(f"Error in search_places: {places_data['error']}")
+        logger.error(f"Error in search_places: {places_data['error']}")
         # If we got an error, let's try a more generic search
-        print("Trying a more generic search...")
+        logger.info("Trying a more generic search...")
         # Extract just the restaurant name without location
         restaurant_name_only = search_query.split(" in ")[0].strip()
-        print(f"Searching for just the restaurant name: {restaurant_name_only}")
+        logger.info(f"Searching for just the restaurant name: {restaurant_name_only}")
         places_data = search_places(restaurant_name_only, fields_to_extract)
 
         # Check again for errors or no results
-        if (
-            not places_data
-            or "error" in places_data
-            or "places" not in places_data
-            or not places_data["places"]
-        ):
-            print("Still could not find the restaurant.")
+        if not places_data or "error" in places_data:
+            logger.error("Still could not find the restaurant.")
             return f"Could not find information about a restaurant named '{restaurant_name_only}'."
 
-    if "places" not in places_data or not places_data["places"]:
-        print("No restaurant found in the search results.")
-        return (
-            f"Could not find information about a restaurant matching '{search_query}'."
-        )
-
-    # Get the first (most relevant) restaurant
-    restaurant = places_data["places"][0]
+    # At this point, places_data should be a single restaurant object
+    # (the first/most relevant result from the search)
+    restaurant = places_data
     restaurant_name = restaurant.get("displayName", {}).get(
         "text", "Unknown Restaurant"
     )
@@ -408,9 +450,9 @@ def create_pitch_deck(query):
     if "reviews" in restaurant:
         restaurant_data["reviews"] = restaurant["reviews"]
 
-    # Print the complete restaurant data for debugging
-    print("\nRestaurant data from Places API:")
-    print(json.dumps(restaurant_data, indent=2))
+    # Log the complete restaurant data for debugging
+    logger.debug("Restaurant data from Places API:")
+    logger.debug(json.dumps(restaurant_data, indent=2))
 
     # Create the structured pitch deck prompt
     pitch_deck_prompt = f"""
@@ -448,7 +490,7 @@ def create_pitch_deck(query):
         },
     )
 
-    print("\nStructured Pitch Deck for TOO GOOD TO GO Sales Rep:")
+    logger.info("Generating structured pitch deck for TOO GOOD TO GO sales rep...")
 
     # Parse the structured output
     try:
@@ -517,9 +559,10 @@ def create_pitch_deck(query):
                     pitch_deck["lead_temperature"]
                 )
 
+        logger.info("Successfully parsed pitch deck response")
         return pitch_deck
     except Exception as e:
-        print(f"Error parsing structured output: {e}")
+        logger.error(f"Error parsing structured output: {e}")
         return {"error": str(e), "raw_response": pitch_deck_response.text}
 
 
@@ -609,16 +652,45 @@ def print_pitch_deck(pitch_deck):
 
 
 if __name__ == "__main__":
-    # Example usage
-    print("\n===== TOO GOOD TO GO Pitch Deck Creator =====")
-    user_query = "Help me prepare a pitch deck for a restaurant called Pak Choi in Taufkirchen in Bavaria, Germany"
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description="TOO GOOD TO GO Pitch Deck Creator")
+    parser.add_argument(
+        "-q",
+        "--query",
+        type=str,
+        default="Help me prepare a pitch deck for a restaurant called Pak Choi in Taufkirchen in Bavaria, Germany",
+        help="Restaurant query to search for",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Enable verbose output (DEBUG level)",
+    )
+    parser.add_argument(
+        "-l",
+        "--log-level",
+        type=str,
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        default="INFO",
+        help="Set the logging level",
+    )
+    args = parser.parse_args()
+
+    # Set logging level based on arguments
+    if args.verbose:
+        logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(getattr(logging, args.log_level))
+
+    logger.info("===== TOO GOOD TO GO Pitch Deck Creator =====")
 
     # Generate the pitch deck
-    pitch_deck = create_pitch_deck(user_query)
+    pitch_deck = create_pitch_deck(args.query)
 
-    # Print the raw JSON response
-    print("\nJSON Response:")
-    print(json.dumps(pitch_deck, indent=2))
+    # Log the raw JSON response at debug level
+    logger.debug("Raw JSON Response:")
+    logger.debug(json.dumps(pitch_deck, indent=2))
 
     # Print the formatted pitch deck
     print_pitch_deck(pitch_deck)
