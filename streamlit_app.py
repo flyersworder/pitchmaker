@@ -240,12 +240,12 @@ def restaurant_search_page():
 
         # Advanced options
         with st.expander("🔧 Advanced Options"):
-            st.info("The following fields are automatically included in the search:")
+            st.info("The following essential fields are included in the search:")
             st.write("• Restaurant name and address")
             st.write("• Contact information (phone, website)")
             st.write("• Ratings and reviews")
-            st.write("• Opening hours and services")
-            st.write("• Cuisine type and features")
+            st.write("• Basic services (delivery, dine-in, takeout)")
+            st.write("• Cuisine type and price level")
 
         submitted = st.form_submit_button(
             "🔍 Search Restaurants", use_container_width=True
@@ -256,7 +256,7 @@ def restaurant_search_page():
 
 
 def search_restaurants(query):
-    # Define comprehensive fields for restaurant search
+    # Define essential fields for restaurant search (to avoid pagination issues)
     fields_to_extract = [
         "places.displayName",
         "places.formattedAddress",
@@ -267,18 +267,10 @@ def search_restaurants(query):
         "places.userRatingCount",
         "places.websiteUri",
         "places.internationalPhoneNumber",
-        "places.currentOpeningHours",
-        "places.regularOpeningHours",
+        "places.priceLevel",
         "places.delivery",
         "places.dineIn",
         "places.takeout",
-        "places.outdoorSeating",
-        "places.servesBreakfast",
-        "places.servesLunch",
-        "places.servesDinner",
-        "places.servesVegetarianFood",
-        "places.editorialSummary",
-        "places.priceLevel",
     ]
 
     with st.spinner("🔍 Searching for restaurants..."):
@@ -382,62 +374,7 @@ def display_all_restaurant_results(restaurants):
         if features:
             st.markdown(f"**Services:** {' • '.join(features)}")
 
-        # Show more details in expander
-        with st.expander(f"📋 More details about {name}"):
-            display_detailed_restaurant_info(restaurant)
-
         st.markdown("</div>", unsafe_allow_html=True)
-
-
-def display_detailed_restaurant_info(restaurant):
-    """Display detailed information about a single restaurant"""
-    col1, col2 = st.columns(2)
-
-    with col1:
-        # Meal services
-        meals = []
-        if restaurant.get("servesBreakfast"):
-            meals.append("🌅 Breakfast")
-        if restaurant.get("servesLunch"):
-            meals.append("🌞 Lunch")
-        if restaurant.get("servesDinner"):
-            meals.append("🌙 Dinner")
-        if restaurant.get("servesVegetarianFood"):
-            meals.append("🥗 Vegetarian")
-
-        if meals:
-            st.markdown("**Meals:** " + " • ".join(meals))
-
-        # Additional features
-        features = []
-        if restaurant.get("outdoorSeating"):
-            features.append("🌤️ Outdoor Seating")
-        if restaurant.get("goodForChildren"):
-            features.append("👶 Kid-friendly")
-        if restaurant.get("goodForGroups"):
-            features.append("👥 Group-friendly")
-
-        if features:
-            st.markdown("**Features:** " + " • ".join(features))
-
-    with col2:
-        # Opening hours
-        if restaurant.get("currentOpeningHours") or restaurant.get(
-            "regularOpeningHours"
-        ):
-            st.markdown("**Opening Hours:**")
-            hours = restaurant.get("currentOpeningHours") or restaurant.get(
-                "regularOpeningHours"
-            )
-            if isinstance(hours, dict) and "weekdayDescriptions" in hours:
-                for day_info in hours["weekdayDescriptions"]:
-                    clean_day = " ".join(day_info.split())  # Clean up whitespace
-                    st.caption(clean_day)
-
-        # Editorial summary
-        if restaurant.get("editorialSummary"):
-            st.markdown("**Description:**")
-            st.caption(restaurant["editorialSummary"].get("text", ""))
 
 
 def display_restaurant_result(restaurant):
@@ -551,44 +488,6 @@ def pitch_deck_page():
 
     if submitted and query:
         generate_pitch_deck(query)
-
-
-def format_opening_hours(weekday_descriptions):
-    """Format opening hours from weekdayDescriptions into a compact, readable format"""
-    if not weekday_descriptions:
-        return "Hours not available"
-
-    # Simply join all descriptions with proper line breaks
-    formatted_lines = []
-    for day_info in weekday_descriptions:
-        # Clean up extra whitespace and normalize
-        clean_info = " ".join(day_info.split())
-        if clean_info:
-            formatted_lines.append(clean_info)
-
-    return "\n".join(formatted_lines)
-
-
-def format_opening_hours_string(hours_string):
-    """Format opening hours from a string format into a compact, readable format"""
-    if not hours_string:
-        return "Hours not available"
-
-    # Replace semicolons with line breaks and clean up
-    clean_string = hours_string.replace(";", "\n")
-
-    # Split into lines and clean each one
-    lines = clean_string.split("\n")
-    formatted_lines = []
-
-    for line in lines:
-        line = line.strip()
-        if line:
-            # Clean up extra whitespace
-            line = " ".join(line.split())
-            formatted_lines.append(line)
-
-    return "\n".join(formatted_lines)
 
 
 class StreamlitLogHandler(logging.Handler):
@@ -720,8 +619,14 @@ def display_pitch_deck(pitch_deck):
     # Lead assessment info
     col1, col2 = st.columns(2)
     with col1:
+        lead_temp_help = pitch_deck.get(
+            "lead_temperature_reasoning",
+            "Assessment based on restaurant characteristics and likelihood to convert",
+        )
         st.metric(
-            "🔥 Lead Temperature", pitch_deck.get("lead_temperature", "unknown").title()
+            "🔥 Lead Temperature",
+            pitch_deck.get("lead_temperature", "unknown").title(),
+            help=lead_temp_help,
         )
     with col2:
         if pitch_deck.get("best_contact_time"):
@@ -743,12 +648,25 @@ def display_pitch_deck(pitch_deck):
             st.metric("⭐ Rating", "N/A")
 
     with col2:
+        sustainability_help = stats.get(
+            "sustainability_reasoning", "Assessment based on available information"
+        )
         st.metric(
-            "🌱 Sustainability", stats.get("sustainability_signal", "unknown").title()
+            "🌱 Sustainability",
+            stats.get("sustainability_signal", "unknown").title(),
+            help=sustainability_help,
         )
 
     with col3:
-        st.metric("💻 Digital Ready", stats.get("digital_readiness", "unknown").title())
+        digital_help = stats.get(
+            "digital_readiness_reasoning",
+            "Assessment based on online presence and digital footprint",
+        )
+        st.metric(
+            "💻 Digital Ready",
+            stats.get("digital_readiness", "unknown").title(),
+            help=digital_help,
+        )
 
     with col4:
         if stats.get("user_rating_count"):
