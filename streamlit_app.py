@@ -8,11 +8,151 @@ and generate pitch decks for TOO GOOD TO GO sales representatives.
 import io
 import json
 import logging
+import os
 from contextlib import redirect_stdout
+from typing import List
 
 import streamlit as st
+from dotenv import load_dotenv
+from google import genai
+from pydantic import BaseModel, Field
 
 from main import create_pitch_deck, print_pitch_deck, search_places
+
+# Load environment variables
+load_dotenv()
+
+
+# Pydantic model for TGTG relevance assessment
+class TGTGRelevanceAssessment(BaseModel):
+    relevance: int = Field(
+        description="Relevance score from 0-10 for TOO GOOD TO GO partnership potential",
+        ge=0,
+        le=10,
+    )
+    reason: str = Field(
+        description="Brief explanation of the relevance score focusing on TGTG partnership potential"
+    )
+
+
+class FoodBusinessRanking(BaseModel):
+    assessments: List[TGTGRelevanceAssessment] = Field(
+        description="List of relevance assessments for each food business in the same order as provided"
+    )
+
+
+def evaluate_food_business_relevance(
+    food_businesses: List[dict],
+) -> List[TGTGRelevanceAssessment]:
+    """
+    Evaluate the TGTG partnership potential of a list of food businesses using LLM.
+
+    Args:
+        food_businesses: List of food business data from Google Places API
+
+    Returns:
+        List of TGTGRelevanceAssessment objects with relevance scores and reasons
+    """
+    if not food_businesses:
+        return []
+
+    # Initialize the Google Gemini API client
+    api_key = os.getenv("GOOGLE_API_KEY")
+    if not api_key:
+        st.error("Google API key not found. Cannot evaluate relevance.")
+        return []
+
+    client = genai.Client(api_key=api_key)
+
+    # Prepare simplified business data for the LLM
+    simplified_businesses = []
+    for business in food_businesses:
+        simplified = {
+            "name": business.get("displayName", {}).get("text", "Unknown"),
+            "address": business.get("formattedAddress", ""),
+            "types": business.get("types", []),
+            "rating": business.get("rating"),
+            "user_rating_count": business.get("userRatingCount"),
+            "price_level": business.get("priceLevel"),
+            "business_status": business.get("businessStatus"),
+            "services": {
+                "delivery": business.get("delivery"),
+                "dine_in": business.get("dineIn"),
+                "takeout": business.get("takeout"),
+            },
+        }
+        simplified_businesses.append(simplified)
+
+    # Create the prompt for TGTG relevance assessment
+    assessment_prompt = f"""
+    ## CONTEXT: TOO GOOD TO GO BUSINESS MODEL
+    TOO GOOD TO GO is a marketplace that connects consumers with food businesses that have surplus food.
+    Businesses sell surplus food at reduced prices through the app, reducing waste while generating revenue.
+
+    IDEAL PARTNERS have these characteristics:
+    - High food waste potential (daily fresh items, baked goods, prepared meals)
+    - Regular operating schedule with predictable surplus
+    - Multiple meal times or high product variety
+    - Good reputation (ratings) and customer base
+    - Openness to sustainability initiatives
+    - Delivery/takeout capability preferred
+
+    ## TASK
+    Evaluate each food business below for TOO GOOD TO GO partnership potential.
+    Score each from 0-10 (10 = perfect fit) and provide reasoning.
+
+    ## FOOD BUSINESSES TO EVALUATE:
+    ```json
+    {json.dumps(simplified_businesses, indent=2)}
+    ```
+
+    ## SCORING CRITERIA:
+    - **10-9**: Perfect fit (bakeries, cafes with fresh items, restaurants with daily specials)
+    - **8-7**: Very good fit (most restaurants, delis, food retailers with perishables)
+    - **6-5**: Moderate fit (basic restaurants, some retail food)
+    - **4-3**: Low fit (fast food chains, limited fresh items)
+    - **2-1**: Poor fit (non-food or very limited waste potential)
+    - **0**: Not suitable (no food waste potential)
+
+    Focus on: food waste potential, business type, operating patterns, and sustainability alignment.
+    """
+
+    try:
+        # Generate the structured assessment
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=assessment_prompt,
+            config={
+                "response_mime_type": "application/json",
+                "response_schema": FoodBusinessRanking,
+            },
+        )
+
+        if hasattr(response, "parsed"):
+            ranking = response.parsed
+            return ranking.assessments
+        else:
+            # Fallback to manual JSON parsing
+            ranking_data = json.loads(response.text)
+            assessments = []
+            for assessment_data in ranking_data.get("assessments", []):
+                assessment = TGTGRelevanceAssessment(
+                    relevance=assessment_data.get("relevance", 0),
+                    reason=assessment_data.get("reason", "No assessment available"),
+                )
+                assessments.append(assessment)
+            return assessments
+
+    except Exception as e:
+        st.error(f"Error evaluating relevance: {str(e)}")
+        # Return default assessments if LLM fails
+        return [
+            TGTGRelevanceAssessment(
+                relevance=5, reason="Assessment unavailable due to technical error"
+            )
+            for _ in food_businesses
+        ]
+
 
 # Configure page
 st.set_page_config(
@@ -295,15 +435,30 @@ def search_food_businesses(query):
                 unsafe_allow_html=True,
             )
 
-            st.info(f"Found {len(results)} food business(es) matching your search.")
+            # Evaluate TGTG relevance and rank results
+            with st.spinner("🤖 Evaluating TGTG partnership potential..."):
+                assessments = evaluate_food_business_relevance(results)
 
-            display_all_food_business_results(results)
+            # Combine results with their assessments and sort by relevance
+            if assessments and len(assessments) == len(results):
+                combined_results = list(zip(results, assessments))
+                # Sort by relevance score (highest first)
+                combined_results.sort(key=lambda x: x[1].relevance, reverse=True)
+                results, assessments = zip(*combined_results)
+                results = list(results)
+                assessments = list(assessments)
+
+            st.info(
+                f"Found {len(results)} food business(es) matching your search, ranked by TGTG partnership potential."
+            )
+
+            display_all_food_business_results(results, assessments)
 
         except Exception as e:
             st.error(f"❌ An error occurred: {str(e)}")
 
 
-def display_all_food_business_results(food_businesses):
+def display_all_food_business_results(food_businesses, assessments=None):
     """Display all food business results with basic information in a list format"""
     for i, food_business in enumerate(food_businesses, 1):
         st.markdown('<div class="result-container">', unsafe_allow_html=True)
@@ -315,7 +470,66 @@ def display_all_food_business_results(food_businesses):
         col1, col2, col3 = st.columns([3, 2, 1])
 
         with col1:
-            st.markdown(f"### {i}. 🏪 {name}")
+            # Create ranking display with medals and TGTG relevance
+            ranking_display = ""
+            assessment = (
+                assessments[i - 1] if assessments and i - 1 < len(assessments) else None
+            )
+
+            if assessment:
+                # Medal display for top 3
+                if i == 1:
+                    medal = "🥇"
+                elif i == 2:
+                    medal = "🥈"
+                elif i == 3:
+                    medal = "🥉"
+                else:
+                    medal = f"{i}."
+
+                # Create ranking with tooltip
+                relevance_score = assessment.relevance
+                reason = assessment.reason
+
+                # Color code based on relevance score
+                if relevance_score >= 8:
+                    score_color = "#00D68F"  # TGTG green for high relevance
+                elif relevance_score >= 6:
+                    score_color = "#FFA726"  # Orange for medium relevance
+                else:
+                    score_color = "#78909C"  # Gray for low relevance
+
+                # Create ranking display with better tooltip using Streamlit columns
+                rank_col1, rank_col2 = st.columns([1, 4])
+
+                with rank_col1:
+                    st.markdown(
+                        f"<span style='font-size: 1.5em;'>{medal}</span>",
+                        unsafe_allow_html=True,
+                    )
+
+                with rank_col2:
+                    # Use Streamlit metric with help parameter for tooltip
+                    st.metric(
+                        label="TGTG Relevance",
+                        value=f"{relevance_score}/10",
+                        help=f"💡 Assessment: {reason}",
+                        delta=None,
+                    )
+
+                    # Add color styling with CSS
+                    if relevance_score >= 8:
+                        badge_style = "🟢 High Priority"
+                    elif relevance_score >= 6:
+                        badge_style = "🟡 Medium Priority"
+                    else:
+                        badge_style = "⚪ Low Priority"
+
+                    st.caption(badge_style)
+            else:
+                st.markdown(f"### {i}.")
+
+            st.markdown(f"### 🏪 {name}")
             st.markdown(f"📍 {address}")
 
             # Cuisine type
