@@ -143,6 +143,24 @@ class KeyStats(BaseModel):
     )
 
 
+class PersuasionTechnique(BaseModel):
+    technique_name: str = Field(
+        description="Name of the behavioral science technique (e.g., social proof, scarcity, etc.)"
+    )
+    description: str = Field(
+        description="Brief description of how this technique works"
+    )
+    application: str = Field(
+        description="Specific application of this technique for this restaurant"
+    )
+    effectiveness_reason: str = Field(
+        description="Why this technique would be particularly effective for this restaurant"
+    )
+    pitch_script: str = Field(
+        description="Ready-to-use script for sales representatives to deliver this persuasion technique in a natural, conversational way"
+    )
+
+
 class Objection(BaseModel):
     objection: str = Field(description="Common objection a restaurant might have")
     response: str = Field(description="How to address the objection")
@@ -155,8 +173,9 @@ class PitchStrategy(BaseModel):
     value_proposition: str = Field(
         description="Clear value proposition tailored to this restaurant"
     )
-    social_proof: List[str] = Field(
-        description="Examples of similar restaurants that have succeeded with Too Good To Go"
+    persuasion_techniques: List[PersuasionTechnique] = Field(
+        description="Most effective behavioral science techniques for this specific restaurant",
+        default_factory=list,
     )
     objection_handling: List[Objection] = Field(
         description="Common objections and how to address them"
@@ -361,17 +380,27 @@ def create_pitch_deck(query):
 
     # Make the request with Google Search tool
     enrichment_prompt = f"""
+    ## CONTEXT: TOO GOOD TO GO BUSINESS MODEL
+    TOO GOOD TO GO is a marketplace that connects consumers with restaurants and food businesses that have surplus food at the end of the day. Businesses sell this surplus food at a reduced price through the TOO GOOD TO GO app, reducing food waste while generating additional revenue and reaching new customers. The business model benefits restaurants by:
+    - Creating a new revenue stream from food that would otherwise be wasted
+    - Attracting new customers who may become regulars
+    - Enhancing sustainability credentials and brand reputation
+    - Reducing waste disposal costs
+    - Contributing to environmental sustainability goals
+
     ## TASK
-    You are a specialized restaurant analyst for TOO GOOD TO GO, researching {restaurant_name} located at {restaurant_address} to identify partnership opportunities. Conduct comprehensive research and provide ONLY factual, evidence-based information.
+    You are a specialized restaurant analyst for TOO GOOD TO GO, researching {restaurant_name} located at {restaurant_address} to identify partnership opportunities. Your goal is to gather comprehensive, factual information that will help our sales team craft a highly personalized and effective pitch. Conduct thorough research and provide ONLY factual, evidence-based information.
 
     ## SEARCH STRATEGY
+    Begin with these search approaches, but feel free to pursue additional searches if you identify promising angles:
     1. Search for the restaurant's official website, social media profiles, and online menu
     2. Find recent reviews across multiple platforms (Google, Yelp, TripAdvisor, local food blogs)
     3. Look for local news articles or business listings mentioning the restaurant
-    4. Identify information about the restaurant's operations, management, and customer experiences
+    4. Research existing TOO GOOD TO GO partners in the same region or with similar cuisine
+    5. Identify information about the restaurant's operations, management, and customer experiences
 
-    ## REQUIRED INFORMATION
-    Organize your findings into these specific categories:
+    ## INFORMATION TO GATHER
+    Focus on these categories, but add any additional relevant information you discover:
 
     ### FOOD WASTE POTENTIAL
     - Menu complexity and variety (more items = higher waste potential)
@@ -408,7 +437,14 @@ def create_pitch_deck(query):
     - Customer demographic insights
 
     ## OUTPUT FORMAT
-    Provide factual, concise information in bullet points under each category. If information is not available for certain categories, explicitly state this rather than making assumptions. Focus on information that would be most relevant for a TOO GOOD TO GO partnership opportunity.
+    Provide factual, concise information in bullet points under each category. For each insight, include a brief note on how it might be relevant to a TOO GOOD TO GO partnership opportunity.
+
+    If you discover any particularly compelling insights that don't fit neatly into the categories above, include them in an "ADDITIONAL INSIGHTS" section.
+
+    If information is not available for certain categories, explicitly state this rather than making assumptions. Remember that high-quality, specific information is more valuable than general observations.
+
+    ## FINAL ASSESSMENT
+    End your analysis with a brief (2-3 sentence) assessment of this restaurant's potential fit with TOO GOOD TO GO, highlighting the most promising partnership angles based on your research.
     """
 
     search_response = client.models.generate_content(
@@ -526,24 +562,28 @@ def create_pitch_deck(query):
        - Key pain points related to food waste or inventory management
        - Core values that would align with TOO GOOD TO GO's mission
 
-    3. **Key Statistics**: Data-driven assessment including:
-       - Rating and review summary
-       - Sustainability signal (high/medium/low) with detailed reasoning for the assessment
-       - Digital readiness assessment (high/medium/low) with detailed reasoning for the assessment
-       - Estimated food waste potential and revenue opportunity
+     3. **Key Statistics**: Data-driven assessment including:
+        - Rating and review summary
+        - Sustainability signal (high/medium/low) with detailed reasoning for the assessment
+        - Digital readiness assessment (high/medium/low) with detailed reasoning for the assessment
+        - Estimated food waste potential and revenue opportunity
 
-    4. **Phone Call Pitch Strategy**: Scientifically-grounded approach using behavioral science principles:
-       - Opening hook that quickly engages and addresses specific pain points (10-15 seconds)
-       - Value proposition tailored to {restaurant_name}'s specific situation with clear vocal emphasis points
-       - Social proof examples that work well in conversation, specifically mentioning existing TOO GOOD TO GO partners in the same region or with similar cuisine type when possible
-       - Responses to 2-3 likely objections that might arise during the call
-       - Conversation transitions and questions to maintain engagement
-       - Urgency-based closing that creates momentum toward scheduling a follow-up meeting
+     4. **Phone Call Pitch Strategy**: Scientifically-grounded approach using behavioral science principles:
+        - Opening hook that quickly engages and addresses specific pain points (10-15 seconds)
+        - Value proposition tailored to {restaurant_name}'s specific situation with clear vocal emphasis points
+        - 3-4 most effective persuasion techniques for this specific restaurant, including:
+          * Detailed application of each technique for this restaurant
+          * Why each technique would be particularly effective in this case
+          * For social proof, prioritize examples that most closely resemble this restaurant (similar cuisine, size, price point, or location). When multiple examples are available, select the ones with the highest similarity to maximize relevance and impact
+          * A ready-to-use pitch script (2-4 sentences) for each technique that sales representatives can use verbatim in conversation
+        - Responses to 2-3 likely objections that might arise during the call
+        - Conversation transitions and questions to maintain engagement
+        - Urgency-based closing that creates momentum toward scheduling a follow-up meeting
 
-    5. **Behavioral Science Insights**: Specific tactical recommendations based on:
-       - Which behavioral principles (social proof, scarcity, etc.) will be most effective for this specific restaurant
-       - How to frame the TOO GOOD TO GO value proposition to align with the restaurant's values
-       - Psychological triggers that would resonate with this specific decision maker
+     5. **Behavioral Science Insights**: Specific tactical recommendations based on:
+        - Which behavioral principles (social proof, scarcity, etc.) will be most effective for this specific restaurant
+        - How to frame the TOO GOOD TO GO value proposition to align with the restaurant's values
+        - Psychological triggers that would resonate with this specific decision maker
 
     6. **Lead Assessment**:
        - Temperature rating (cold/warm/hot) with detailed reasoning for the assessment
@@ -715,9 +755,13 @@ def print_pitch_deck(pitch_deck):
     print(f"Opening Hook: {pitch_deck['pitch_strategy']['opening_hook']}")
     print(f"\nValue Proposition: {pitch_deck['pitch_strategy']['value_proposition']}")
 
-    print("\nSocial Proof Examples:")
-    for proof in pitch_deck["pitch_strategy"]["social_proof"]:
-        print(f"- {proof}")
+    print("\nPersuasion Techniques:")
+    for technique in pitch_deck["pitch_strategy"]["persuasion_techniques"]:
+        print(f"\n- {technique['technique_name']}")
+        print(f"  Description: {technique['description']}")
+        print(f"  Application: {technique['application']}")
+        print(f"  Why effective: {technique['effectiveness_reason']}")
+        print(f"\n  PITCH SCRIPT:\n  \"{technique['pitch_script']}\"")
 
     print("\nObjection Handling:")
     for item in pitch_deck["pitch_strategy"]["objection_handling"]:
