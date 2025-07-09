@@ -1,7 +1,7 @@
 # flake8: noqa: E501
 """
 Streamlit app for TOO GOOD TO GO Pitch Maker
-This app allows users to search for restaurants using Google Places API
+This app allows users to search for food businesses using Google Places API
 and generate pitch decks for TOO GOOD TO GO sales representatives.
 """
 
@@ -208,22 +208,22 @@ def main():
     st.sidebar.title("🎯 Navigation")
     page = st.sidebar.radio(
         "Choose a function:",
-        ["🔍 Restaurant Search", "📊 Pitch Deck Generator"],
+        ["🔍 Food Business Search", "📊 Pitch Deck Generator"],
         index=0,
     )
 
-    if page == "🔍 Restaurant Search":
-        restaurant_search_page()
+    if page == "🔍 Food Business Search":
+        food_business_search_page()
     elif page == "📊 Pitch Deck Generator":
         pitch_deck_page()
 
 
-def restaurant_search_page():
+def food_business_search_page():
     st.markdown(
         """
     <div class="section-header">
-        <h2>🔍 Restaurant Search</h2>
-        <p>Search for restaurants and stores in any location using Google Places API</p>
+        <h2>🔍 Food Business Search</h2>
+        <p>Search for food businesses and stores in any location using Google Places API</p>
     </div>
     """,
         unsafe_allow_html=True,
@@ -233,29 +233,29 @@ def restaurant_search_page():
     with st.form("search_form"):
         st.subheader("Enter Search Query")
         query = st.text_input(
-            "Search for restaurants:",
-            placeholder="e.g., Chinese restaurants in Taufkirchen, Bavaria, Germany",
-            help="Enter a search query like 'Italian restaurants in Munich' or 'sushi bars in Berlin'",
+            "Search for food businesses:",
+            placeholder="e.g., Chinese restaurant in Taufkirchen, Bavaria, Germany",
+            help="Enter a search query like 'Italian restaurant in Munich' or 'Asian supermarket in Berlin'",
         )
 
         # Advanced options
         with st.expander("🔧 Advanced Options"):
             st.info("The following essential fields are included in the search:")
-            st.write("• Restaurant name and address")
+            st.write("• Food business name and address")
             st.write("• Contact information (phone, website)")
             st.write("• Ratings and reviews")
             st.write("• Basic services (delivery, dine-in, takeout)")
             st.write("• Cuisine type and price level")
 
         submitted = st.form_submit_button(
-            "🔍 Search Restaurants", use_container_width=True
+            "🔍 Search Food Businesses", use_container_width=True
         )
 
     if submitted and query:
-        search_restaurants(query)
+        search_food_businesses(query)
 
 
-def search_restaurants(query):
+def search_food_businesses(query):
     # Define essential fields for restaurant search (to avoid pagination issues)
     fields_to_extract = [
         "places.displayName",
@@ -273,7 +273,7 @@ def search_restaurants(query):
         "places.takeout",
     ]
 
-    with st.spinner("🔍 Searching for restaurants..."):
+    with st.spinner("🔍 Searching for food businesses..."):
         try:
             results = search_places(query, fields_to_extract)
 
@@ -282,7 +282,7 @@ def search_restaurants(query):
                 return
 
             if not results:
-                st.warning("No restaurants found for your search query.")
+                st.warning("No food businesses found for your search query.")
                 return
 
             # Display results
@@ -295,22 +295,22 @@ def search_restaurants(query):
                 unsafe_allow_html=True,
             )
 
-            st.info(f"Found {len(results)} restaurant(s) matching your search.")
+            st.info(f"Found {len(results)} food business(es) matching your search.")
 
-            display_all_restaurant_results(results)
+            display_all_food_business_results(results)
 
         except Exception as e:
             st.error(f"❌ An error occurred: {str(e)}")
 
 
-def display_all_restaurant_results(restaurants):
-    """Display all restaurant results with basic information in a list format"""
-    for i, restaurant in enumerate(restaurants, 1):
+def display_all_food_business_results(food_businesses):
+    """Display all food business results with basic information in a list format"""
+    for i, food_business in enumerate(food_businesses, 1):
         st.markdown('<div class="result-container">', unsafe_allow_html=True)
 
-        # Restaurant name and basic info
-        name = restaurant.get("displayName", {}).get("text", "Unknown Restaurant")
-        address = restaurant.get("formattedAddress", "Address not available")
+        # Food business name and basic info
+        name = food_business.get("displayName", {}).get("text", "Unknown Food Business")
+        address = food_business.get("formattedAddress", "Address not available")
 
         col1, col2, col3 = st.columns([3, 2, 1])
 
@@ -319,8 +319,8 @@ def display_all_restaurant_results(restaurants):
             st.markdown(f"📍 {address}")
 
             # Cuisine type
-            if restaurant.get("types"):
-                types = restaurant["types"]
+            if food_business.get("types"):
+                types = food_business["types"]
                 cuisine_types = [
                     t.replace("_", " ").title()
                     for t in types
@@ -331,15 +331,15 @@ def display_all_restaurant_results(restaurants):
 
         with col2:
             # Rating and reviews
-            if restaurant.get("rating"):
-                rating = restaurant["rating"]
-                count = restaurant.get("userRatingCount", 0)
+            if food_business.get("rating"):
+                rating = food_business["rating"]
+                count = food_business.get("userRatingCount", 0)
                 st.metric("⭐ Rating", f"{rating}/5")
                 st.caption(f"{count} reviews")
 
             # Business status
-            if restaurant.get("businessStatus"):
-                status = restaurant["businessStatus"].replace("_", " ").title()
+            if food_business.get("businessStatus"):
+                status = food_business["businessStatus"].replace("_", " ").title()
                 if status == "Operational":
                     st.success("✅ Open")
                 else:
@@ -347,28 +347,28 @@ def display_all_restaurant_results(restaurants):
 
         with col3:
             # Contact info
-            if restaurant.get("internationalPhoneNumber"):
-                st.markdown(f"📞 {restaurant['internationalPhoneNumber']}")
+            if food_business.get("internationalPhoneNumber"):
+                st.markdown(f"📞 {food_business['internationalPhoneNumber']}")
 
-            if restaurant.get("websiteUri"):
-                st.markdown(f"[🌐 Website]({restaurant['websiteUri']})")
+            if food_business.get("websiteUri"):
+                st.markdown(f"[🌐 Website]({food_business['websiteUri']})")
 
             # Price level
-            if restaurant.get("priceLevel"):
+            if food_business.get("priceLevel"):
                 try:
-                    price_num = int(restaurant["priceLevel"])
+                    price_num = int(food_business["priceLevel"])
                     price_level = "💰" * price_num
                     st.markdown(f"**Price:** {price_level}")
                 except (ValueError, TypeError):
-                    st.markdown(f"**Price:** {restaurant['priceLevel']}")
+                    st.markdown(f"**Price:** {food_business['priceLevel']}")
 
         # Quick features summary
         features = []
-        if restaurant.get("delivery"):
+        if food_business.get("delivery"):
             features.append("🚚 Delivery")
-        if restaurant.get("dineIn"):
+        if food_business.get("dineIn"):
             features.append("🍽️ Dine-in")
-        if restaurant.get("takeout"):
+        if food_business.get("takeout"):
             features.append("🥡 Takeout")
 
         if features:
@@ -471,11 +471,11 @@ def pitch_deck_page():
 
     # Input form
     with st.form("pitch_form"):
-        st.subheader("Restaurant Information")
+        st.subheader("Food Business Information")
         query = st.text_input(
-            "Enter restaurant query:",
+            "Enter food business query:",
             placeholder="e.g., Help me prepare a pitch deck for Pak Choi in Taufkirchen, Bavaria, Germany",
-            help="Describe the restaurant you want to create a pitch deck for",
+            help="Describe the food business you want to create a pitch deck for",
         )
 
         st.info(
@@ -616,21 +616,61 @@ def display_pitch_deck(pitch_deck):
     approach_text = pitch_deck.get("recommended_approach", "No approach provided")
     st.write(approach_text)
 
-    # Lead assessment info
+    # Lead assessment info with vivid temperature display
     col1, col2 = st.columns(2)
     with col1:
+        lead_temp = pitch_deck.get("lead_temperature", "unknown").lower()
         lead_temp_help = pitch_deck.get(
             "lead_temperature_reasoning",
-            "Assessment based on restaurant characteristics and likelihood to convert",
+            "Assessment based on food business characteristics and likelihood to convert",
         )
-        st.metric(
-            "🔥 Lead Temperature",
-            pitch_deck.get("lead_temperature", "unknown").title(),
-            help=lead_temp_help,
-        )
+
+        # Create vivid temperature display with colors and icons
+        if lead_temp == "hot":
+            st.markdown(
+                "<div style='background: linear-gradient(135deg, #FF6B6B 0%, #FF8E8E 100%); padding: 1rem; border-radius: 10px; text-align: center; color: white; font-weight: bold;'>"
+                "<h3 style='margin: 0; color: white;'>🔥🔥🔥 HOT LEAD 🔥🔥🔥</h3>"
+                "<p style='margin: 0.5rem 0 0 0; color: white;'>High conversion probability</p>"
+                "</div>",
+                unsafe_allow_html=True,
+            )
+        elif lead_temp == "warm":
+            st.markdown(
+                "<div style='background: linear-gradient(135deg, #FFA726 0%, #FFB74D 100%); padding: 1rem; border-radius: 10px; text-align: center; color: white; font-weight: bold;'>"
+                "<h3 style='margin: 0; color: white;'>🔥🔥 WARM LEAD 🔥🔥</h3>"
+                "<p style='margin: 0.5rem 0 0 0; color: white;'>Moderate conversion probability</p>"
+                "</div>",
+                unsafe_allow_html=True,
+            )
+        elif lead_temp == "cold":
+            st.markdown(
+                "<div style='background: linear-gradient(135deg, #42A5F5 0%, #64B5F6 100%); padding: 1rem; border-radius: 10px; text-align: center; color: white; font-weight: bold;'>"
+                "<h3 style='margin: 0; color: white;'>❄️ COLD LEAD ❄️</h3>"
+                "<p style='margin: 0.5rem 0 0 0; color: white;'>Lower conversion probability</p>"
+                "</div>",
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                "<div style='background: linear-gradient(135deg, #78909C 0%, #90A4AE 100%); padding: 1rem; border-radius: 10px; text-align: center; color: white; font-weight: bold;'>"
+                "<h3 style='margin: 0; color: white;'>❔ UNKNOWN LEAD ❔</h3>"
+                "<p style='margin: 0.5rem 0 0 0; color: white;'>Assessment pending</p>"
+                "</div>",
+                unsafe_allow_html=True,
+            )
+
+        # Show reasoning in a smaller text below
+        if lead_temp_help:
+            st.caption(f"📝 Reasoning: {lead_temp_help}")
     with col2:
         if pitch_deck.get("best_contact_time"):
-            st.info(f"**Best Contact Time:** {pitch_deck['best_contact_time']}")
+            st.markdown(
+                "<div style='background: linear-gradient(135deg, #00D68F 0%, #00B377 100%); padding: 1rem; border-radius: 10px; color: white;'>"
+                f"<h4 style='margin: 0; color: white;'>⏰ Best Contact Time</h4>"
+                f"<p style='margin: 0.5rem 0 0 0; color: white;'>{pitch_deck['best_contact_time']}</p>"
+                "</div>",
+                unsafe_allow_html=True,
+            )
 
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -725,13 +765,28 @@ def display_pitch_deck(pitch_deck):
         st.write("**Value Proposition:**")
         st.write(strategy["value_proposition"])
 
-    if strategy.get("social_proof"):
-        st.write("**Social Proof Examples:**")
-        for i, proof in enumerate(strategy["social_proof"], 1):
-            st.write(f"{i}. {proof}")
+    # Display persuasion techniques with expanded behavioral science information
+    if strategy.get("persuasion_techniques"):
+        st.write("**🧠 Behavioral Science Techniques:**")
+        for i, technique in enumerate(strategy["persuasion_techniques"], 1):
+            with st.expander(f"🎯 {technique.get('technique_name', f'Technique {i}')}"):
+                st.write(
+                    f"**Description:** {technique.get('description', 'No description available')}"
+                )
+                st.write(
+                    f"**Application:** {technique.get('application', 'No application details')}"
+                )
+                st.write(
+                    f"**Why Effective:** {technique.get('effectiveness_reason', 'No reasoning provided')}"
+                )
+
+                # Highlight the ready-to-use pitch script
+                if technique.get("pitch_script"):
+                    st.markdown("**📝 Ready-to-Use Script:**")
+                    st.info(f'"{technique["pitch_script"]}"')
 
     if strategy.get("urgency_closing"):
-        st.write("**Closing Statement:**")
+        st.write("**🔥 Closing Statement:**")
         st.write(strategy["urgency_closing"])
 
     # Objection handling in a more user-friendly format
