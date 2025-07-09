@@ -1,7 +1,7 @@
 # flake8: noqa: E501
 """
-This script creates a pitch deck for a TOO GOOD TO GO sales representative based on a restaurant query.
-It uses the Google Places API to extract restaurant information and enriches it with Google Search results.
+This script creates a pitch deck for a TOO GOOD TO GO sales representative based on a food business query.
+It uses the Google Places API to extract food business information and enriches it with Google Search results.
 The output is structured using Pydantic models for better organization and validation.
 """
 
@@ -77,31 +77,32 @@ class ContactInfo(BaseModel):
     name: str
     address: str
     phone: Optional[str] = Field(
-        default=None, description="Phone number of the restaurant"
+        default=None, description="Phone number of the food business"
     )
     email: Optional[str] = Field(
-        default=None, description="Email address of the restaurant"
+        default=None, description="Email address of the food business"
     )
     website: Optional[str] = Field(
-        default=None, description="Website URL of the restaurant"
+        default=None, description="Website URL of the food business"
     )
     owner: Optional[str] = Field(
-        default=None, description="Name of the restaurant owner or manager"
+        default=None, description="Name of the food business owner or manager"
     )
     founded: Optional[str] = Field(
-        default=None, description="When the restaurant was founded"
+        default=None, description="When the food business was founded"
     )
-    cuisine_type: Optional[List[str]] = Field(
-        default=None, description="Types of cuisine served"
+    food_offerings: Optional[List[str]] = Field(
+        default=None,
+        description="Types of food offered (cuisine types, product categories, specialties)",
     )
     opening_hours: Optional[str] = Field(
-        default=None, description="Opening hours of the restaurant"
+        default=None, description="Opening hours of the food business"
     )
 
 
 class DecisionMakerProfile(BaseModel):
     summary: str = Field(
-        description="A brief summary of the decision maker or the restaurant management style"
+        description="A brief summary of the decision maker or the food business management style"
     )
     pain_points: List[str] = Field(
         description="Potential pain points the decision maker might have regarding food waste"
@@ -151,10 +152,10 @@ class PersuasionTechnique(BaseModel):
         description="Brief description of how this technique works"
     )
     application: str = Field(
-        description="Specific application of this technique for this restaurant"
+        description="Specific application of this technique for this food business"
     )
     effectiveness_reason: str = Field(
-        description="Why this technique would be particularly effective for this restaurant"
+        description="Why this technique would be particularly effective for this food business"
     )
     pitch_script: str = Field(
         description="Ready-to-use script for sales representatives to deliver this persuasion technique in a natural, conversational way"
@@ -162,7 +163,7 @@ class PersuasionTechnique(BaseModel):
 
 
 class Objection(BaseModel):
-    objection: str = Field(description="Common objection a restaurant might have")
+    objection: str = Field(description="Common objection a food business might have")
     response: str = Field(description="How to address the objection")
 
 
@@ -171,10 +172,10 @@ class PitchStrategy(BaseModel):
         description="Attention-grabbing opening line for the pitch"
     )
     value_proposition: str = Field(
-        description="Clear value proposition tailored to this restaurant"
+        description="Clear value proposition tailored to this food business"
     )
     persuasion_techniques: List[PersuasionTechnique] = Field(
-        description="Most effective behavioral science techniques for this specific restaurant",
+        description="Most effective behavioral science techniques for this specific food business",
         default_factory=list,
     )
     objection_handling: List[Objection] = Field(
@@ -195,16 +196,16 @@ class PitchDeck(BaseModel):
         description="Any additional insights or recommendations for the sales rep",
     )
     recommended_approach: str = Field(
-        description="Overall recommended approach for pitching to this restaurant"
+        description="Overall recommended approach for pitching to this food business"
     )
     lead_temperature: LeadTemperature = Field(
-        description="Assessment of how likely the restaurant is to convert (cold, warm, hot)"
+        description="Assessment of how likely the food business is to convert (cold, warm, hot)"
     )
     lead_temperature_reasoning: Optional[str] = Field(
         default=None, description="Reasoning behind the lead temperature assessment"
     )
     best_contact_time: str = Field(
-        description="Best time to contact the restaurant based on their business hours and type of establishment"
+        description="Best time to contact the food business based on their business hours and type of establishment"
     )
 
 
@@ -274,7 +275,7 @@ def search_places(text_query: str, fields: list[str]) -> dict:
 
 
 def create_pitch_deck(query):
-    """Create a pitch deck for TOO GOOD TO GO sales rep based on a restaurant query."""
+    """Create a pitch deck for TOO GOOD TO GO sales rep based on a food business query."""
     # Initialize the Google Gemini API client
     api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
@@ -284,11 +285,11 @@ def create_pitch_deck(query):
     client = genai.Client(api_key=api_key)
 
     logger.info(f"Processing user query: {query}")
-    logger.info("Step 1: Extracting restaurant information using Places API...")
+    logger.info("Step 1: Extracting food business information using Places API...")
 
-    # Step 1: Extract the restaurant name and location from the query
-    extraction_prompt = f"""Extract ONLY the restaurant name and its location from this query: '{query}'.
-    Format the response exactly as: 'restaurant_name in location'.
+    # Step 1: Extract the food business name and location from the query
+    extraction_prompt = f"""Extract ONLY the food business name and its location from this query: '{query}'.
+    Format the response exactly as: 'food_business_name in location'.
     For example: 'Pak Choi in Taufkirchen, Bavaria, Germany'
     Do not include any other text or explanation."""
 
@@ -343,36 +344,38 @@ def create_pitch_deck(query):
     # Check if we found any places or if there was an error
     if not places_data:
         logger.warning("No data returned from search_places tool.")
-        return (
-            f"Could not find information about a restaurant matching '{search_query}'."
-        )
+        return f"Could not find information about a food business matching '{search_query}'."
 
     if "error" in places_data:
         logger.error(f"Error in search_places: {places_data['error']}")
         # If we got an error, let's try a more generic search
         logger.info("Trying a more generic search...")
-        # Extract just the restaurant name without location
-        restaurant_name_only = search_query.split(" in ")[0].strip()
-        logger.info(f"Searching for just the restaurant name: {restaurant_name_only}")
-        places_data = search_places(restaurant_name_only, fields_to_extract)
+        # Extract just the food business name without location
+        food_business_name_only = search_query.split(" in ")[0].strip()
+        logger.info(
+            f"Searching for just the food business name: {food_business_name_only}"
+        )
+        places_data = search_places(food_business_name_only, fields_to_extract)
 
         # Check again for errors or no results
         if not places_data or "error" in places_data:
-            logger.error("Still could not find the restaurant.")
-            return f"Could not find information about a restaurant named '{restaurant_name_only}'."
+            logger.error("Still could not find the food business.")
+            return f"Could not find information about a food business named '{food_business_name_only}'."
 
-    # At this point, places_data should be a list of restaurant objects
+    # At this point, places_data should be a list of food business objects
     # Select the first/most relevant result for pitch deck generation
-    restaurant = places_data[0] if isinstance(places_data, list) else places_data
-    restaurant_name = restaurant.get("displayName", {}).get(
-        "text", "Unknown Restaurant"
+    food_business = places_data[0] if isinstance(places_data, list) else places_data
+    food_business_name = food_business.get("displayName", {}).get(
+        "text", "Unknown Food Business"
     )
-    restaurant_address = restaurant.get("formattedAddress", "Address not available")
+    food_business_address = food_business.get(
+        "formattedAddress", "Address not available"
+    )
 
-    logger.info(f"Found restaurant: {restaurant_name} at {restaurant_address}")
+    logger.info(f"Found food business: {food_business_name} at {food_business_address}")
 
     # Step 2: Use Google Search to enrich the information
-    logger.info("\nStep 2: Enriching restaurant information with Google Search...\n")
+    logger.info("\nStep 2: Enriching food business information with Google Search...\n")
 
     # Create Google Search tool
     grounding_tool = types.Tool(google_search=types.GoogleSearch())
@@ -381,7 +384,7 @@ def create_pitch_deck(query):
     # Make the request with Google Search tool
     enrichment_prompt = f"""
     ## CONTEXT: TOO GOOD TO GO BUSINESS MODEL
-    TOO GOOD TO GO is a marketplace that connects consumers with restaurants and food businesses that have surplus food at the end of the day. Businesses sell this surplus food at a reduced price through the TOO GOOD TO GO app, reducing food waste while generating additional revenue and reaching new customers. The business model benefits restaurants by:
+    TOO GOOD TO GO is a marketplace that connects consumers with food businesses (restaurants, cafes, bakeries, supermarkets, grocery stores, specialty food shops, etc.) that have surplus food. Businesses sell this surplus food at a reduced price through the TOO GOOD TO GO app, reducing food waste while generating additional revenue and reaching new customers. The business model benefits food businesses by:
     - Creating a new revenue stream from food that would otherwise be wasted
     - Attracting new customers who may become regulars
     - Enhancing sustainability credentials and brand reputation
@@ -389,32 +392,34 @@ def create_pitch_deck(query):
     - Contributing to environmental sustainability goals
 
     ## TASK
-    You are a specialized restaurant analyst for TOO GOOD TO GO, researching {restaurant_name} located at {restaurant_address} to identify partnership opportunities. Your goal is to gather comprehensive, factual information that will help our sales team craft a highly personalized and effective pitch. Conduct thorough research and provide ONLY factual, evidence-based information.
+    You are a specialized food business analyst for TOO GOOD TO GO, researching {food_business_name} located at {food_business_address} to identify partnership opportunities. Your goal is to gather comprehensive, factual information that will help our sales team craft a highly personalized and effective pitch. Conduct thorough research and provide ONLY factual, evidence-based information.
 
     ## SEARCH STRATEGY
     Begin with these search approaches, but feel free to pursue additional searches if you identify promising angles:
-    1. Search for the restaurant's official website, social media profiles, and online menu
-    2. Find recent reviews across multiple platforms (Google, Yelp, TripAdvisor, local food blogs)
-    3. Look for local news articles or business listings mentioning the restaurant
-    4. Research existing TOO GOOD TO GO partners in the same region or with similar cuisine
-    5. Identify information about the restaurant's operations, management, and customer experiences
+    1. Search for the business's official website, social media profiles, and online product/menu information
+    2. Find recent reviews across multiple platforms (Google, Yelp, TripAdvisor, local blogs)
+    3. Look for local news articles or business listings mentioning the business
+    4. Research existing TOO GOOD TO GO partners in the same region or with similar offerings
+    5. Identify information about the business's operations, management, and customer experiences
 
     ## INFORMATION TO GATHER
     Focus on these categories, but add any additional relevant information you discover:
 
     ### FOOD WASTE POTENTIAL
-    - Menu complexity and variety (more items = higher waste potential)
-    - Daily specials or buffet offerings
-    - Fresh ingredients with short shelf life (e.g., seafood, sushi)
-    - Portion sizes mentioned in reviews
+    - Product/menu variety and complexity (more items = higher waste potential)
+    - Daily specials, seasonal items, or prepared food offerings
+    - Fresh items with short shelf life (e.g., produce, baked goods, prepared meals)
+    - Portion sizes or package sizes mentioned in reviews
     - Any explicit mentions of food waste practices or sustainability initiatives
+    - For retail: inventory management practices, markdown policies, or expiration date handling
 
     ### OPERATIONAL PATTERNS
     - Peak business hours vs. slow periods
     - Seasonal fluctuations in business
-    - Recent changes: expansion, renovation, menu updates, management changes
+    - Recent changes: expansion, renovation, product/menu updates, management changes
     - Operational challenges mentioned in reviews or articles
-    - Delivery/takeout vs. dine-in balance
+    - For restaurants/cafes: Delivery/takeout vs. dine-in balance
+    - For retail: Shopping patterns, busiest days, inventory turnover
 
     ### MANAGEMENT INSIGHTS
     - Owner/manager names and management style if available
@@ -424,17 +429,19 @@ def create_pitch_deck(query):
     - Any mentions of business priorities or values
 
     ### COMPETITIVE LANDSCAPE
-    - Similar restaurants in the area
-    - Existing TOO GOOD TO GO partners in the same region or with similar cuisine type
+    - Similar food businesses in the area
+    - Existing TOO GOOD TO GO partners in the same region or with similar offerings
     - Local competitors using food waste reduction services
     - Unique selling points compared to competitors
     - Position in the local market (upscale, mid-range, budget)
+    - For retail: Competing stores, product overlap, pricing strategy
 
     ### CUSTOMER SENTIMENT
-    - Overall satisfaction with food quality and value
-    - Specific praise or complaints about food portions or quality
+    - Overall satisfaction with product/food quality and value
+    - Specific praise or complaints about portions, packaging, or quality
     - Mentions of price-to-value ratio
     - Customer demographic insights
+    - For retail: Customer feedback on product selection, freshness, and shopping experience
 
     ## OUTPUT FORMAT
     Provide factual, concise information in bullet points under each category. For each insight, include a brief note on how it might be relevant to a TOO GOOD TO GO partnership opportunity.
@@ -444,7 +451,7 @@ def create_pitch_deck(query):
     If information is not available for certain categories, explicitly state this rather than making assumptions. Remember that high-quality, specific information is more valuable than general observations.
 
     ## FINAL ASSESSMENT
-    End your analysis with a brief (2-3 sentence) assessment of this restaurant's potential fit with TOO GOOD TO GO, highlighting the most promising partnership angles based on your research.
+    End your analysis with a brief (2-3 sentence) assessment of this food business's potential fit with TOO GOOD TO GO, highlighting the most promising partnership angles based on your research.
     """
 
     search_response = client.models.generate_content(
@@ -459,16 +466,16 @@ def create_pitch_deck(query):
     # Step 3: Generate the pitch deck content
     logger.info("\nStep 3: Creating TOO GOOD TO GO pitch deck content...\n")
 
-    # Format restaurant data for the prompt, handling nested structures and missing fields
-    restaurant_data = {
-        "name": restaurant_name,
-        "address": restaurant_address,
+    # Format food business data for the prompt, handling nested structures and missing fields
+    food_business_data = {
+        "name": food_business_name,
+        "address": food_business_address,
         "location": (
             search_query.split(" in ", 1)[1] if " in " in search_query else "Unknown"
         ),
     }
 
-    # Add basic fields that might be directly in the restaurant object
+    # Add basic fields that might be directly in the food business object
     for field, display_name in [
         ("priceLevel", "price_level"),
         ("websiteUri", "website"),
@@ -479,27 +486,27 @@ def create_pitch_deck(query):
         ("googleMapsUri", "google_maps_url"),
         ("shortFormattedAddress", "short_address"),
     ]:
-        if field in restaurant:
-            restaurant_data[display_name] = restaurant[field]
+        if field in food_business:
+            food_business_data[display_name] = food_business[field]
 
     # Add types if available
-    if "types" in restaurant:
-        restaurant_data["types"] = restaurant["types"]
-    elif "primaryType" in restaurant:
-        restaurant_data["primary_type"] = restaurant["primaryType"]
+    if "types" in food_business:
+        food_business_data["types"] = food_business["types"]
+    elif "primaryType" in food_business:
+        food_business_data["primary_type"] = food_business["primaryType"]
 
     # Add photos if available
-    if "photos" in restaurant and restaurant["photos"]:
-        restaurant_data["has_photos"] = True
-        restaurant_data["photo_count"] = len(restaurant["photos"])
+    if "photos" in food_business and food_business["photos"]:
+        food_business_data["has_photos"] = True
+        food_business_data["photo_count"] = len(food_business["photos"])
 
     # Add opening hours
-    if "currentOpeningHours" in restaurant:
-        restaurant_data["opening_hours"] = restaurant["currentOpeningHours"]
-    elif "regularOpeningHours" in restaurant:
-        restaurant_data["opening_hours"] = restaurant["regularOpeningHours"]
+    if "currentOpeningHours" in food_business:
+        food_business_data["opening_hours"] = food_business["currentOpeningHours"]
+    elif "regularOpeningHours" in food_business:
+        food_business_data["opening_hours"] = food_business["regularOpeningHours"]
 
-    # Add restaurant features and services
+    # Add food business features and services
     for feature, display_name in [
         ("delivery", "offers_delivery"),
         ("dineIn", "offers_dine_in"),
@@ -509,8 +516,8 @@ def create_pitch_deck(query):
         ("goodForChildren", "good_for_children"),
         ("goodForGroups", "good_for_groups"),
     ]:
-        if feature in restaurant:
-            restaurant_data[display_name] = restaurant[feature]
+        if feature in food_business:
+            food_business_data[display_name] = food_business[feature]
 
     # Add meal service information
     for service, display_name in [
@@ -519,30 +526,30 @@ def create_pitch_deck(query):
         ("servesDinner", "serves_dinner"),
         ("servesVegetarianFood", "serves_vegetarian"),
     ]:
-        if service in restaurant:
-            restaurant_data[display_name] = restaurant[service]
+        if service in food_business:
+            food_business_data[display_name] = food_business[service]
 
     # Add editorial and review information
-    if "editorialSummary" in restaurant:
-        restaurant_data["editorial_summary"] = restaurant["editorialSummary"]
-    if "reviewSummary" in restaurant:
-        restaurant_data["review_summary"] = restaurant["reviewSummary"]
-    if "reviews" in restaurant:
-        restaurant_data["reviews"] = restaurant["reviews"]
+    if "editorialSummary" in food_business:
+        food_business_data["editorial_summary"] = food_business["editorialSummary"]
+    if "reviewSummary" in food_business:
+        food_business_data["review_summary"] = food_business["reviewSummary"]
+    if "reviews" in food_business:
+        food_business_data["reviews"] = food_business["reviews"]
 
-    # Log the complete restaurant data for debugging
-    logger.debug("Restaurant data from Places API:")
-    logger.debug(json.dumps(restaurant_data, indent=2))
+    # Log the complete food business data for debugging
+    logger.debug("Food business data from Places API:")
+    logger.debug(json.dumps(food_business_data, indent=2))
 
     # Create the structured pitch deck prompt
     pitch_deck_prompt = f"""
     ## ROLE AND OBJECTIVE
-    You are an expert pitch deck creator for TOO GOOD TO GO, specializing in crafting evidence-based, persuasive sales materials. Your goal is to create a highly effective, personalized pitch deck for {restaurant_name} that will maximize conversion likelihood during an initial phone call pitch.
+    You are an expert pitch deck creator for TOO GOOD TO GO, specializing in crafting evidence-based, persuasive sales materials. Your goal is to create a highly effective, personalized pitch deck for {food_business_name} that will maximize conversion likelihood during an initial phone call pitch. While this business may be referred to as a restaurant in some places, apply the same approach for any food business type (bakery, café, supermarket, grocery store, specialty food shop, etc.).
 
     ## AVAILABLE DATA
-    RESTAURANT INFORMATION FROM PLACES API:
+    FOOD BUSINESS INFORMATION FROM PLACES API:
     ```json
-    {json.dumps(restaurant_data, indent=2)}
+    {json.dumps(food_business_data, indent=2)}
     ```
 
     ADDITIONAL INFORMATION FROM GOOGLE SEARCH:
@@ -555,7 +562,7 @@ def create_pitch_deck(query):
     2. Create a structured pitch deck with the following sections:
 
     ## REQUIRED SECTIONS
-    1. **Contact Information**: Complete details about {restaurant_name} (name, address, phone, website, cuisine type, etc.)
+    1. **Contact Information**: Complete details about {food_business_name} (name, address, phone, website, cuisine type, etc.)
 
     2. **Decision Maker Profile**: Evidence-based assessment of management style, priorities, and pain points. Include:
        - Likely decision-making approach based on business operations
@@ -570,19 +577,19 @@ def create_pitch_deck(query):
 
      4. **Phone Call Pitch Strategy**: Scientifically-grounded approach using behavioral science principles:
         - Opening hook that quickly engages and addresses specific pain points (10-15 seconds)
-        - Value proposition tailored to {restaurant_name}'s specific situation with clear vocal emphasis points
-        - 3-4 most effective persuasion techniques for this specific restaurant, including:
-          * Detailed application of each technique for this restaurant
+        - Value proposition tailored to {food_business_name}'s specific situation with clear vocal emphasis points
+        - 3-4 most effective persuasion techniques for this specific food business, including:
+          * Detailed application of each technique for this food business
           * Why each technique would be particularly effective in this case
-          * For social proof, prioritize examples that most closely resemble this restaurant (similar cuisine, size, price point, or location). When multiple examples are available, select the ones with the highest similarity to maximize relevance and impact
+          * For social proof, prioritize examples that most closely resemble this food business (similar offerings, size, price point, or location). When multiple examples are available, select the ones with the highest similarity to maximize relevance and impact
           * A ready-to-use pitch script (2-4 sentences) for each technique that sales representatives can use verbatim in conversation
         - Responses to 2-3 likely objections that might arise during the call
         - Conversation transitions and questions to maintain engagement
         - Urgency-based closing that creates momentum toward scheduling a follow-up meeting
 
      5. **Behavioral Science Insights**: Specific tactical recommendations based on:
-        - Which behavioral principles (social proof, scarcity, etc.) will be most effective for this specific restaurant
-        - How to frame the TOO GOOD TO GO value proposition to align with the restaurant's values
+        - Which behavioral principles (social proof, scarcity, etc.) will be most effective for this specific food business
+        - How to frame the TOO GOOD TO GO value proposition to align with the food business's values
         - Psychological triggers that would resonate with this specific decision maker
 
     6. **Lead Assessment**:
@@ -590,13 +597,13 @@ def create_pitch_deck(query):
        - Optimal contact time based on business operations and decision maker availability
 
     ## TONE AND STYLE
-    Make the pitch deck concise, persuasive, and specifically tailored to {restaurant_name} for an effective phone call pitch.
+    Make the pitch deck concise, persuasive, and specifically tailored to {food_business_name} for an effective phone call pitch.
     Use concrete details from the data to personalize every aspect of the pitch.
     Focus on conversational language, clear talking points, and actionable insights that will help the sales representative engage the listener and move toward scheduling a follow-up meeting.
     Remember that this is for a verbal phone conversation, so include natural transitions, pauses, and questions that would work well in spoken dialogue.
 
     ## LANGUAGE REQUIREMENTS
-    IMPORTANT: Create the entire pitch deck in English only, regardless of the restaurant's location or language. Do not include any content in other languages, even for greetings or cultural references. The pitch should be fully accessible to English-speaking sales representatives.
+    IMPORTANT: Create the entire pitch deck in English only, regardless of the food business's location or language. Do not include any content in other languages, even for greetings or cultural references. The pitch should be fully accessible to English-speaking sales representatives.
     """
 
     # Generate the structured pitch deck content
@@ -690,7 +697,7 @@ def print_pitch_deck(pitch_deck):
     print("\nFormatted Pitch Deck:")
 
     print("\n=== CONTACT INFORMATION ===\n")
-    print(f"Restaurant: {pitch_deck['contact_info']['name']}")
+    print(f"Food Business: {pitch_deck['contact_info']['name']}")
     print(f"Address: {pitch_deck['contact_info']['address']}")
     if "phone" in pitch_deck["contact_info"] and pitch_deck["contact_info"]["phone"]:
         print(f"Phone: {pitch_deck['contact_info']['phone']}")
@@ -798,7 +805,7 @@ if __name__ == "__main__":
         "--query",
         type=str,
         default="Help me prepare a pitch deck for a restaurant called Pak Choi in Taufkirchen in Bavaria, Germany",
-        help="Restaurant query to search for",
+        help="Food business query to search for",
     )
     parser.add_argument(
         "-v",
