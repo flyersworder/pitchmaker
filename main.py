@@ -402,6 +402,8 @@ def create_pitch_deck(query):
     4. Research existing TOO GOOD TO GO partners in the same region or with similar offerings
     5. Identify information about the business's operations, management, and customer experiences
 
+    IMPORTANT: Whenever possible, conduct searches in the local language of the business's location, as this typically yields richer and more detailed results. Local language searches often reveal information not available in English, including authentic customer reviews, local news coverage, and cultural context that can be valuable for crafting a personalized pitch.
+
     ## INFORMATION TO GATHER
     Focus on these categories, but add any additional relevant information you discover:
 
