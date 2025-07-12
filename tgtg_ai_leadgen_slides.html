@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TGTG AI Lead Generation – Slide Deck</title>
+  <!-- Nunito is a Google Font, but TGTG sometimes uses Quicksand or similar rounded fonts. We'll check both. -->
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&family=Quicksand:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    html, body { height: 100%; margin: 0; padding: 0; }
+    body { font-family: 'Nunito', 'Quicksand', Arial, sans-serif; background: linear-gradient(120deg, #B8E6C1 0%, #fff 100%); margin: 0; height: 100vh; overflow: hidden; }
+    #slide-container { height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .slide {
+      background: #fff;
+      box-shadow: 0 8px 40px rgba(26,124,75,0.10);
+      border-radius: 32px;
+      width: 92vw;
+      max-width: 1400px;
+      min-height: 70vh;
+      padding: 70px 100px 50px 100px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      transition: box-shadow 0.2s;
+    }
+    .slide-title {
+      font-size: 3.2em;
+      font-weight: 700;
+      color: #1A7C4B;
+      margin-bottom: 0.3em;
+      letter-spacing: -1px;
+      font-family: 'Nunito', 'Quicksand', Arial, sans-serif;
+    }
+    .slide-subtitle {
+      font-size: 1.5em;
+      color: #3a6b4b;
+      margin-bottom: 1.2em;
+      font-family: 'Nunito', 'Quicksand', Arial, sans-serif;
+    }
+    ul, ol {
+      font-size: 1.35em;
+      margin-left: 1.2em;
+      color: #222;
+      margin-bottom: 1.5em;
+      font-family: 'Nunito', 'Quicksand', Arial, sans-serif;
+    }
+    .slide-visual { margin: 32px 0; text-align: center; }
+    .slide-visual img, .slide-visual svg { max-width: 80%; border-radius: 14px; box-shadow: 0 2px 12px rgba(26,124,75,0.06); }
+    .slide-footer {
+      margin-top: auto;
+      font-size: 1.25em;
+      color: #1A7C4B;
+      text-align: right;
+      letter-spacing: 0.5px;
+      font-family: 'Nunito', 'Quicksand', Arial, sans-serif;
+    }
+    .deck-nav {
+      position: fixed; bottom: 30px; left: 0; right: 0; text-align: center;
+      z-index: 10;
+    }
+    .deck-nav button {
+      font-size: 2em; padding: 16px 24px; margin: 0 12px;
+      border: none; border-radius: 50%;
+      background: rgba(26,124,75,0.15); color: #1A7C4B; cursor: pointer;
+      font-family: 'Nunito', 'Quicksand', Arial, sans-serif;
+      font-weight: 700;
+      box-shadow: 0 2px 8px rgba(26,124,75,0.05);
+      transition: all 0.2s;
+    }
+    .deck-nav button:hover {
+      background: rgba(26,124,75,0.25);
+    }
+    .deck-nav button:disabled {
+      background: rgba(189,189,189,0.15); color: #bdbdbd; cursor: not-allowed;
+    }
+    .tgtg-logo {
+      position: absolute; top: 30px; right: 40px; width: 110px; height: auto;
+      background: none;
+    }
+    .progress-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 12px;
+      background-color: rgba(26,124,75,0.15);
+      z-index: 20;
+      box-shadow: 0 1px 4px rgba(26,124,75,0.2);
+    }
+    .slide-counter {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background-color: rgba(26,124,75,0.8);
+      color: white;
+      padding: 5px 10px;
+      border-radius: 12px;
+      font-size: 0.9em;
+      font-weight: bold;
+      z-index: 20;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .slide-counter:hover {
+      background-color: rgba(26,124,75,1);
+    }
+    .slide-nav {
+      position: fixed;
+      top: 60px;
+      right: 20px;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 30;
+      max-height: 70vh;
+      overflow-y: auto;
+      display: none;
+      width: 300px;
+      border: 1px solid rgba(26,124,75,0.2);
+    }
+    .slide-nav.active {
+      display: block;
+    }
+    .slide-nav-item {
+      padding: 10px 15px;
+      border-bottom: 1px solid rgba(26,124,75,0.1);
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .slide-nav-item:hover {
+      background-color: rgba(26,124,75,0.1);
+    }
+    .slide-nav-item.current {
+      background-color: rgba(26,124,75,0.2);
+      font-weight: bold;
+    }
+    .slide-nav-title {
+      font-weight: bold;
+      color: #1A7C4B;
+    }
+    .slide-nav-subtitle {
+      font-size: 0.8em;
+      color: #666;
+      margin-top: 3px;
+    }
+    .progress-bar {
+      height: 100%;
+      background-color: #1A7C4B;
+      background: linear-gradient(90deg, #1A7C4B, #4CAF50);
+      width: 0%;
+      transition: width 0.3s ease-in-out;
+      box-shadow: 0 0 8px rgba(26,124,75,0.4);
+      border-right: 2px solid rgba(255,255,255,0.7);
+    }
+    @media (max-width: 900px) {
+      .slide { padding: 32px 5vw 32px 5vw; }
+      .slide-title { font-size: 2em; }
+      .slide-subtitle { font-size: 1.2em; }
+      ul, ol { font-size: 1.1em; }
+    }
+    @media (max-width: 600px) {
+      .slide { padding: 14px 1vw 14px 1vw; border-radius: 12px; }
+      .slide-title { font-size: 1.1em; }
+      .slide-subtitle { font-size: 0.9em; }
+    }
+  </style>
+</head>
+<body>
+<div class="progress-container">
+  <div class="progress-bar" id="progress-bar"></div>
+</div>
+<div class="slide-counter" id="slide-counter"></div>
+<div class="slide-nav" id="slide-nav"></div>
+<div id="slide-container"></div>
+<div class="deck-nav">
+  <button id="prev-btn">&#10094;</button>
+  <button id="next-btn">&#10095;</button>
+</div>
+<script>
+const tgtgLogo = `<img src='https://upload.wikimedia.org/wikipedia/commons/9/9e/TGTG_Logo_green_RGB.svg' alt='TGTG Logo' class='tgtg-logo'>`;
+const agenticWorkflowSVG = `<svg width='500' height='120' viewBox='0 0 500 120' fill='none' xmlns='http://www.w3.org/2000/svg'><rect x='10' y='30' width='90' height='60' rx='18' fill='#B8E6C1'/><text x='55' y='65' text-anchor='middle' font-size='20' fill='#1A7C4B' font-family='Nunito'>Data</text><rect x='120' y='30' width='100' height='60' rx='18' fill='#B8E6C1'/><text x='170' y='65' text-anchor='middle' font-size='20' fill='#1A7C4B' font-family='Nunito'>Enrich</text><rect x='240' y='30' width='100' height='60' rx='18' fill='#B8E6C1'/><text x='290' y='65' text-anchor='middle' font-size='20' fill='#1A7C4B' font-family='Nunito'>Score</text><rect x='360' y='30' width='100' height='60' rx='18' fill='#B8E6C1'/><text x='410' y='65' text-anchor='middle' font-size='20' fill='#1A7C4B' font-family='Nunito'>Pitch</text><polygon points='100,60 120,60 120,70 100,70' fill='#1A7C4B'/><polygon points='220,60 240,60 240,70 220,70' fill='#1A7C4B'/><polygon points='340,60 360,60 360,70 340,70' fill='#1A7C4B'/></svg>`;
+const funnelSVG = `<svg width='400' height='150' viewBox='0 0 400 150'><polygon points='50,30 350,30 320,70 80,70' fill='#B8E6C1' stroke='#1A7C4B' stroke-width='2'/><polygon points='80,70 320,70 290,110 110,110' fill='#fff' stroke='#1A7C4B' stroke-width='2'/><polygon points='110,110 290,110 230,140 170,140' fill='#B8E6C1' stroke='#1A7C4B' stroke-width='2'/><text x='200' y='55' text-anchor='middle' font-size='20' fill='#1A7C4B' font-family='Nunito'>Identify</text><text x='200' y='95' text-anchor='middle' font-size='20' fill='#1A7C4B' font-family='Nunito'>Enrich & Prioritize</text><text x='200' y='132' text-anchor='middle' font-size='20' fill='#1A7C4B' font-family='Nunito'>Convert</text></svg>`;
+const leadCardSVG = `<svg width='320' height='170' viewBox='0 0 320 170'><rect x='10' y='10' width='300' height='150' rx='20' fill='#fff' stroke='#1A7C4B' stroke-width='2'/><circle cx='50' cy='55' r='25' fill='#B8E6C1' stroke='#1A7C4B' stroke-width='2'/><text x='90' y='40' font-family='Nunito' font-size='18' fill='#1A7C4B'>Store: Green Grocer</text><text x='90' y='65' font-family='Nunito' font-size='14' fill='#3a6b4b'>Category: Grocery</text><text x='90' y='85' font-family='Nunito' font-size='14' fill='#3a6b4b'>Location: Berlin</text><text x='90' y='105' font-family='Nunito' font-size='14' fill='#3a6b4b'>Potential: High</text><rect x='90' y='120' width='120' height='22' rx='8' fill='#B8E6C1'/><text x='150' y='136' text-anchor='middle' font-family='Nunito' font-size='14' fill='#1A7C4B'>Pitch Ready</text></svg>`;
+const archSVG = `<svg width='520' height='120' viewBox='0 0 520 120'><rect x='20' y='70' width='80' height='34' rx='12' fill='#B8E6C1'/><text x='60' y='92' text-anchor='middle' font-size='15' fill='#1A7C4B' font-family='Nunito'>Ingest</text><rect x='120' y='70' width='80' height='34' rx='12' fill='#B8E6C1'/><text x='160' y='92' text-anchor='middle' font-size='15' fill='#1A7C4B' font-family='Nunito'>Feature</text><rect x='220' y='70' width='80' height='34' rx='12' fill='#B8E6C1'/><text x='260' y='92' text-anchor='middle' font-size='15' fill='#1A7C4B' font-family='Nunito'>ML/Score</text><rect x='320' y='70' width='80' height='34' rx='12' fill='#B8E6C1'/><text x='360' y='92' text-anchor='middle' font-size='15' fill='#1A7C4B' font-family='Nunito'>Agents</text><rect x='440' y='70' width='60' height='34' rx='12' fill='#B8E6C1'/><text x='470' y='92' text-anchor='middle' font-size='15' fill='#1A7C4B' font-family='Nunito'>CRM</text><polygon points='100,87 120,87 120,97 100,97' fill='#1A7C4B'/><polygon points='200,87 220,87 220,97 200,97' fill='#1A7C4B'/><polygon points='300,87 320,87 320,97 300,97' fill='#1A7C4B'/><polygon points='400,87 440,87 440,97 400,97' fill='#1A7C4B'/></svg>`;
+const slides = [
+  {
+    title: "AI-Driven Lead Generation for Too Good To Go",
+    subtitle: "Automating Impact: From Data to Sales Success",
+    bullets: [
+      "Tackling food waste at scale",
+      "Empowering sales teams with AI/ML automation",
+      "Delivering high-quality, actionable leads"
+    ],
+    visual: tgtgLogo,
+    footer: "Introduction & Context"
+  },
+  {
+    title: "Why This Matters",
+    subtitle: "Food Waste: A Global Challenge",
+    bullets: [
+      "40% of food globally wasted; 10% of GHG emissions",
+      "TGTG: 19 markets, 300M+ meals saved, 90M users"
+    ],
+    afterText: `<div style='background:#B8E6C1;padding:28px 40px 22px 40px;border-radius:18px;margin:36px auto 0 auto;max-width:700px;box-shadow:0 2px 12px rgba(26,124,75,0.08);text-align:center;'>
+      <div style='font-size:1.5em;font-weight:700;color:#1A7C4B;margin-bottom:12px;'>🌍 Lead generation is the engine for impact</div>
+      <div style='display:flex;justify-content:space-around;flex-wrap:wrap;gap:18px;'>
+        <div style='min-width:110px;'>🏪<br><span style='font-weight:600;color:#1A7C4B;'>Stores Rescued</span></div>
+        <div style='min-width:110px;'>🍲<br><span style='font-weight:600;color:#1A7C4B;'>Surplus Food Saved</span></div>
+        <div style='min-width:110px;'>💰<br><span style='font-weight:600;color:#1A7C4B;'>Revenue Growth</span></div>
+        <div style='min-width:110px;'>🌱<br><span style='font-weight:600;color:#1A7C4B;'>Environmental Benefit</span></div>
+        <div style='min-width:110px;'>🤝<br><span style='font-weight:600;color:#1A7C4B;'>Social Impact</span></div>
+      </div>
+    </div>`,
+    visual: null,
+    footer: "Why: Business Context"
+  },
+  {
+    title: "Current Pain Points",
+    subtitle: "Manual, Decentralized, Slow",
+    bullets: [
+      "Sales teams spend too much time finding leads",
+      "Decentralized data & processes across markets",
+      "Missed opportunities, limited scale"
+    ],
+    afterText: `<div style='background:#fff4df;padding:26px 36px 20px 36px;border-radius:16px;margin:32px auto 0 auto;max-width:850px;box-shadow:0 2px 10px rgba(26,124,75,0.07);'>
+      <div style='display:flex;flex-wrap:wrap;gap:20px 40px;justify-content:space-between;'>
+        <div style='min-width:230px;flex:1;'>🎯 <b>Goal</b><br><span style='color:#1A7C4B;'>Establish clear objectives, metrics, and scope before building.</span></div>
+        <div style='min-width:230px;flex:1;'>🗺️ <b>Understand Current Process</b><br><span style='color:#1A7C4B;'>Map manual lead-sourcing end-to-end (interviews, time-studies).</span></div>
+        <div style='min-width:230px;flex:1;'>📊 <b>Define Success Metrics</b><br><span style='color:#1A7C4B;'>Lead volume/quality, adoption, conversion, downstream impact.</span></div>
+      </div>
+      <div style='height:16px;'></div>
+      <div style='display:flex;flex-wrap:wrap;gap:20px 40px;justify-content:space-between;'>
+        <div style='min-width:230px;flex:1;'>🤝 <b>Stakeholder Alignment</b><br><span style='color:#1A7C4B;'>Sales, Commercial Ops, Data/Engineering; agree on SLAs.</span></div>
+        <div style='min-width:230px;flex:1;'>❓ <b>Key Questions</b><br><span style='color:#1A7C4B;'>Benchmarks for speed and scale; constraints: budget, data privacy, tooling.</span></div>
+      </div>
+    </div>`,
+    visual: funnelSVG,
+    footer: "What: Problem Statement"
+  },
+  {
+    title: "Our Vision: End-to-End Automated Lead Engine",
+    subtitle: "Agentic Workflow for Sales Efficiency",
+    bullets: [
+      "AI/ML + agents automate the full lead lifecycle",
+      "From data ingestion to pitch-ready lead cards",
+      "Continuous learning from every sales outcome"
+    ],
+    visual: agenticWorkflowSVG,
+    footer: "How: Solution Overview"
+  },
+  {
+    title: "Phase 1: Lead Discovery",
+    subtitle: "Finding High-Potential Partners",
+    bullets: [
+      "Aggregate data: CRM, APIs, open data, partners",
+      "Search by region, population, adjacency",
+      "Validate: remove existing partners, filter by business logic",
+      "Data quality checkpoints, privacy & compliance built-in"
+    ],
+    visual: null,
+    afterText: `<div style='display:flex;flex-wrap:wrap;gap:22px;justify-content:center;margin-top:32px;'>
+      <div style='background:#B8E6C1;padding:22px 28px;border-radius:18px;min-width:220px;box-shadow:0 2px 8px rgba(26,124,75,0.07);font-size:1.15em;'>🍽️ <b>Food Service APIs</b><br><span style='color:#1A7C4B;'>Google Places, Yelp, TripAdvisor</span></div>
+      <div style='background:#fff4df;padding:22px 28px;border-radius:18px;min-width:220px;box-shadow:0 2px 8px rgba(26,124,75,0.07);font-size:1.15em;'>🏢 <b>Business Registries</b><br><span style='color:#1A7C4B;'>Chamber of Commerce, health departments</span></div>
+      <div style='background:#e3f5e8;padding:22px 28px;border-radius:18px;min-width:220px;box-shadow:0 2px 8px rgba(26,124,75,0.07);font-size:1.15em;'>🍅 <b>Food Industry</b><br><span style='color:#1A7C4B;'>Restaurant associations, supplier networks, malls</span></div>
+      <div style='background:#e4f0fa;padding:22px 28px;border-radius:18px;min-width:220px;box-shadow:0 2px 8px rgba(26,124,75,0.07);font-size:1.15em;'>📱 <b>Delivery Apps</b><br><span style='color:#1A7C4B;'>UberEats, DoorDash, local platforms</span></div>
+      <div style='background:#f5e3e3;padding:22px 28px;border-radius:18px;min-width:220px;box-shadow:0 2px 8px rgba(26,124,75,0.07);font-size:1.15em;'>📍 <b>Location Intelligence</b><br><span style='color:#1A7C4B;'>Foot traffic, store density, opening hours</span></div>
+      <div style='background:#e9e3f5;padding:22px 28px;border-radius:18px;min-width:220px;box-shadow:0 2px 8px rgba(26,124,75,0.07);font-size:1.15em;'>📈 <b>Market Research</b><br><span style='color:#1A7C4B;'>Regional food waste stats, sustainability data</span></div>
+    </div>`,    footer: "Workflow Step 1"
+  },
+  {
+    title: "Phase 2: Lead Enrichment",
+    subtitle: "Making Data Actionable",
+    bullets: [
+      "Scrape & enrich: store, market, sustainability, contacts",
+      "Automate via APIs, web scraping, external datasets",
+      "Data validation, deduplication, normalization",
+      "Fill gaps using LLMs/agents"
+    ],
+    afterText: `<div style='display:flex;gap:32px;align-items:flex-start;margin-top:4px;flex-wrap:wrap;'>
+      <div style='flex:1;min-width:300px;'></div>
+      <div style='display:grid;grid-template-columns:1fr 1fr;gap:16px;min-width:340px;max-width:440px;'>
+        <div style='background:#B8E6C1;padding:16px 14px 14px 18px;border-radius:13px;box-shadow:0 2px 7px rgba(26,124,75,0.07);'>
+          <div style='font-size:1.1em;font-weight:700;color:#1A7C4B;'>🏪 Store Information</div>
+          <ul style='margin:7px 0 0 18px;padding:0;color:#1A7C4B;font-size:0.98em;'>
+            <li>Store type & size</li>
+            <li>Opening hours</li>
+            <li>Menu items</li>
+            <li>Average price point</li>
+          </ul>
+        </div>
+        <div style='background:#e4f0fa;padding:16px 14px 14px 18px;border-radius:13px;box-shadow:0 2px 7px rgba(26,124,75,0.07);'>
+          <div style='font-size:1.1em;font-weight:700;color:#1A7C4B;'>📈 Market Potential</div>
+          <ul style='margin:7px 0 0 18px;padding:0;color:#1A7C4B;font-size:0.98em;'>
+            <li>Foot traffic data</li>
+            <li>Food waste estimates</li>
+            <li>Competitor proximity</li>
+            <li>Regulatory environment</li>
+          </ul>
+        </div>
+        <div style='background:#e3f5e8;padding:16px 14px 14px 18px;border-radius:13px;box-shadow:0 2px 7px rgba(26,124,75,0.07);'>
+          <div style='font-size:1.1em;font-weight:700;color:#1A7C4B;'>🌱 Sustainability Indicators</div>
+          <ul style='margin:7px 0 0 18px;padding:0;color:#1A7C4B;font-size:0.98em;'>
+            <li>Eco-friendly practices</li>
+            <li>Sustainability mentions</li>
+            <li>Organic/local sourcing</li>
+            <li>Waste reduction initiatives</li>
+          </ul>
+        </div>
+        <div style='background:#fff4df;padding:16px 14px 14px 18px;border-radius:13px;box-shadow:0 2px 7px rgba(26,124,75,0.07);'>
+          <div style='font-size:1.1em;font-weight:700;color:#1A7C4B;'>📬 Contact & Accessibility</div>
+          <ul style='margin:7px 0 0 18px;padding:0;color:#1A7C4B;font-size:0.98em;'>
+            <li>Decision maker details</li>
+            <li>Email addresses</li>
+            <li>Phone numbers</li>
+            <li>Social media handles</li>
+          </ul>
+        </div>
+      </div>
+    </div>`,
+    footer: "Workflow Step 2"
+  },
+  {
+    title: "Phase 3: Lead Ranking",
+    subtitle: "Ranking for Sales Effectiveness",
+    bullets: [
+      "Prioritize leads using five weighted factors:<ul style='margin:7px 0 0 24px;padding:0;color:#1A7C4B;font-size:0.98em;'>"
+      + "<li>Conversion Probability (ML model)</li>"
+      + "<li>Revenue Opportunity (ML model)</li>"
+      + "<li>Awareness (sustainability practices)</li>"
+      + "<li>Urgency (competition, time sensitivity)</li>"
+      + "<li>Strategic Alignment (fit with TGTG mission)</li>"
+      + "</ul>"
+    ],
+    afterText: `<div style='margin:36px auto 0 auto;max-width:780px;'>
+      <div style='display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:22px;'>
+        <div style='background:#e4f0fa;padding:18px 10px 14px 10px;border-radius:13px;text-align:center;box-shadow:0 2px 7px rgba(26,124,75,0.07);'>
+          <div style='font-size:1.5em;'>🔄</div>
+          <div style='font-weight:700;color:#1A7C4B;font-size:1.05em;'>Conversion</div>
+          <div style='font-size:0.93em;color:#3a6b4b;'>Pitch success ML</div>
+        </div>
+        <div style='background:#fff4df;padding:18px 10px 14px 10px;border-radius:13px;text-align:center;box-shadow:0 2px 7px rgba(26,124,75,0.07);'>
+          <div style='font-size:1.5em;'>💰</div>
+          <div style='font-weight:700;color:#1A7C4B;font-size:1.05em;'>Revenue</div>
+          <div style='font-size:0.93em;color:#3a6b4b;'>Revenue ML</div>
+        </div>
+        <div style='background:#e3f5e8;padding:18px 10px 14px 10px;border-radius:13px;text-align:center;box-shadow:0 2px 7px rgba(26,124,75,0.07);'>
+          <div style='font-size:1.5em;'>🌱</div>
+          <div style='font-weight:700;color:#1A7C4B;font-size:1.05em;'>Awareness</div>
+          <div style='font-size:0.93em;color:#3a6b4b;'>Sustainability</div>
+        </div>
+        <div style='background:#f5e3e3;padding:18px 10px 14px 10px;border-radius:13px;text-align:center;box-shadow:0 2px 7px rgba(26,124,75,0.07);'>
+          <div style='font-size:1.5em;'>⏰</div>
+          <div style='font-weight:700;color:#1A7C4B;font-size:1.05em;'>Urgency</div>
+          <div style='font-size:0.93em;color:#3a6b4b;'>Competition</div>
+        </div>
+        <div style='background:#B8E6C1;padding:18px 10px 14px 10px;border-radius:13px;text-align:center;box-shadow:0 2px 7px rgba(26,124,75,0.07);'>
+          <div style='font-size:1.5em;'>🎯</div>
+          <div style='font-weight:700;color:#1A7C4B;font-size:1.05em;'>Alignment</div>
+          <div style='font-size:0.93em;color:#3a6b4b;'>Strategic fit</div>
+        </div>
+      </div>
+      <div style='background:#fff4df;padding:18px 24px;border-radius:13px;box-shadow:0 2px 7px rgba(26,124,75,0.06);font-size:1.12em;color:#1A7C4B;text-align:center;'>
+        <b>Example Score Calculation:</b><br>
+        <span style='font-size:0.97em;color:#3a6b4b;'>Final Score = 0.3 × Conversion + 0.3 × Revenue + 0.2 × Awareness + 0.2 × Urgency + Alignment Bonus</span>
+      </div>
+    </div>`,
+    visual: null,
+    footer: "Workflow Step 3"
+  },
+  {
+    title: "Phase 4: Pitch Preparation",
+    subtitle: "Empowering Sales with Insights",
+    bullets: [
+      "Auto-generate lead one-pagers with enriched data",
+      "Cross-reference multiple intelligence sources (social, financial, competitive, behavioral) to craft the most effective strategy",
+      "Suggest pitch angles: social proof, success stories, forecasts",
+      "Leverage database of successful pitches to apply proven tactics",
+      "Personalize scripts, decks, and CRM integration"
+    ],
+    afterText: `<div class='pitch-right-card' style='background:#fff4df;padding:24px 26px 20px 26px;border-radius:18px;box-shadow:0 2px 10px rgba(26,124,75,0.09);width:100%;'>
+      <div style='display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;'>
+        <div>
+          <div style='font-size:1.08em;color:#1A7C4B;font-weight:600;margin-bottom:4px;'>Green Grocer (Grüner Markt)</div>
+          <div style='font-size:0.95em;color:#3a6b4b;'>Premium Grocery · Kreuzberg & Friedrichshain · Est. 2018</div>
+        </div>
+        <div>
+          <svg width="120" height="120" viewBox="0 0 120 120">
+            <!-- Background grid circles -->
+            <circle cx="60" cy="60" r="48" stroke="#e8e8e8" fill="none" stroke-width="0.7"/>
+            <circle cx="60" cy="60" r="36" stroke="#e8e8e8" fill="none" stroke-width="0.7"/>
+            <circle cx="60" cy="60" r="24" stroke="#e8e8e8" fill="none" stroke-width="0.7"/>
+            <circle cx="60" cy="60" r="12" stroke="#e8e8e8" fill="none" stroke-width="0.7"/>
+
+            <!-- Five axis lines (proper pentagon angles: 72° apart) -->
+            <line x1="60" y1="60" x2="60" y2="12" stroke="#d0d0d0" stroke-width="1"/>
+            <line x1="60" y1="60" x2="108" y2="32" stroke="#d0d0d0" stroke-width="1"/>
+            <line x1="60" y1="60" x2="93" y2="104" stroke="#d0d0d0" stroke-width="1"/>
+            <line x1="60" y1="60" x2="27" y2="104" stroke="#d0d0d0" stroke-width="1"/>
+            <line x1="60" y1="60" x2="12" y2="32" stroke="#d0d0d0" stroke-width="1"/>
+
+            <!-- Data visualization - properly connected pentagon -->
+            <polygon points="60,20 100,38 85,92 35,92 20,38" fill="rgba(26,124,75,0.2)" stroke="#1A7C4B" stroke-width="2"/>
+
+            <!-- Data points with meaningful values -->
+            <circle cx="60" cy="20" r="3" fill="#1A7C4B" stroke="#fff" stroke-width="1.2"/>
+            <circle cx="100" cy="38" r="3" fill="#1A7C4B" stroke="#fff" stroke-width="1.2"/>
+            <circle cx="85" cy="92" r="3" fill="#1A7C4B" stroke="#fff" stroke-width="1.2"/>
+            <circle cx="35" cy="92" r="3" fill="#1A7C4B" stroke="#fff" stroke-width="1.2"/>
+            <circle cx="20" cy="38" r="3" fill="#1A7C4B" stroke="#fff" stroke-width="1.2"/>
+
+            <!-- Labels with scores (moved further out for visibility) -->
+            <text x="60" y="10" text-anchor="middle" font-size="9" fill="#1A7C4B" font-weight="bold">Conv 8.5</text>
+            <text x="112" y="28" text-anchor="middle" font-size="9" fill="#1A7C4B" font-weight="bold">Rev 7.2</text>
+            <text x="95" y="113" text-anchor="middle" font-size="9" fill="#1A7C4B" font-weight="bold">Aware 6.8</text>
+            <text x="25" y="113" text-anchor="middle" font-size="9" fill="#1A7C4B" font-weight="bold">Align 9.1</text>
+            <text x="0" y="24" text-anchor="start" font-size="9" fill="#1A7C4B" font-weight="bold">Urg 7.5</text>
+          </svg>
+        </div>
+      </div>
+
+      <div style='display:flex;justify-content:space-between;align-items:center;background:#ebf7f0;border-radius:8px;padding:8px 12px;margin-bottom:10px;'>
+        <div style='font-size:0.95em;'><b>Lead Score:</b> <span style='color:#1A7C4B;font-weight:600;'>7.8/10</span> (Top 12%)</div>
+        <div style='font-size:0.95em;'><b>Contact:</b> <span>Jonas Weber (Owner)</span> · <span style='color:#1A7C4B;'>Tue/Thu 9-11am, In-person</span></div>
+      </div>
+
+      <div style='font-size:0.95em;color:#444;margin-bottom:10px;line-height:1.3;'>
+        <b>Decision Maker Profile:</b> Jonas Weber, 42, owns both locations since 2018. Sustainability advocate (Kreuzberg Green Business Network member). Recently posted about "Zero Waste Corner" on LinkedIn (2.1K engagements). Mentioned food waste concerns at Berlin Food Retail Summit (Nov 2024). ROI-focused but invests in aligned initiatives. Prefers face-to-face discussions over calls.
+      </div>
+
+      <div style='font-size:0.97em;color:#1A7C4B;margin-bottom:5px;'><b>AI-Enriched Intelligence:</b></div>
+      <ul style='margin:0 0 8px 16px;padding:0;color:#3a6b4b;font-size:0.95em;'>
+        <li><b>Revenue Model (7.2/10):</b> €850K annual revenue, ML projects +€45K/year with TGTG</li>
+        <li><b>Sustainability Signal (6.8/10):</b> Job posting for "Sustainability Coordinator" (2 weeks ago)</li>
+        <li><b>Social Sentiment:</b> 4.7/5 avg rating, customers praise "eco-friendly initiatives" (47 reviews)</li>
+        <li><b>Competitive Gap:</b> Only premium grocer in 500m radius without food-saving partnership</li>
+      </ul>
+
+      <div style='font-size:0.97em;color:#1A7C4B;margin-bottom:5px;'><b>Strategic Pitch Framework:</b></div>
+      <ul style='margin:0 0 0 16px;padding:0;color:#3a6b4b;font-size:0.95em;'>
+        <li><b>Opening Hook:</b> "Saw your Zero Waste Corner post - 2.1K engagements shows real customer demand"</li>
+        <li><b>Social Proof:</b> "Marketplace Deli (similar profile) reduced waste 34% and gained 180 new weekly customers"</li>
+        <li><b>Revenue Angle:</b> "Our model projects €45K additional annual revenue based on your customer profile"</li>
+        <li><b>Urgency Close:</b> "Perfect timing with your sustainability hire - we're launching Kreuzberg showcase in 3 weeks"</li>
+      </ul>
+    </div>`,
+    visual: null,
+    footer: "Workflow Step 4"
+  },
+  {
+    title: "Agentic Framework Overview",
+    subtitle: "Orchestration & Specialized Agents",
+    bullets: [],
+    afterText: `<div style='display:flex;flex-direction:column;align-items:center;margin-top:18px;'>
+      <div style='background:#e8f5e9;border-radius:12px;padding:14px 36px 12px 36px;box-shadow:0 2px 8px rgba(26,124,75,0.09);margin-bottom:16px;'>
+        <div style='font-size:1.15em;font-weight:700;color:#1A7C4B;margin-bottom:2px;'>Orchestration Layer</div>
+        <div style='font-size:0.98em;color:#3a6b4b;'>Agent coordination, workflow management, shared memory</div>
+      </div>
+      <div style='display:flex;gap:18px;flex-wrap:wrap;justify-content:center;'>
+        <div style='background:#fff;border-radius:10px;padding:10px 18px;min-width:180px;box-shadow:0 2px 6px rgba(26,124,75,0.08);margin-bottom:12px;'>
+          <div style='font-weight:600;color:#1A7C4B;margin-bottom:2px;'>Discovery Agent</div>
+          <div style='font-size:0.96em;color:#3a6b4b;'><b>Tools:</b> (Food Service) APIs, Web search, Business registries, internal database<br><b>Capabilities:</b> Lead harvesting, deduplication, preliminary validation</div>
+        </div>
+        <div style='background:#fff;border-radius:10px;padding:10px 18px;min-width:180px;box-shadow:0 2px 6px rgba(26,124,75,0.08);margin-bottom:12px;'>
+          <div style='font-weight:600;color:#1A7C4B;margin-bottom:2px;'>Enrichment Agent</div>
+          <div style='font-size:0.96em;color:#3a6b4b;'><b>Tools:</b> Web scraping, Social APIs<br><b>Capabilities:</b> Detailed profile building, key metric extraction, contact discovery</div>
+        </div>
+        <div style='background:#fff;border-radius:10px;padding:10px 18px;min-width:180px;box-shadow:0 2px 6px rgba(26,124,75,0.08);margin-bottom:12px;'>
+          <div style='font-weight:600;color:#1A7C4B;margin-bottom:2px;'>Prioritization Agent</div>
+          <div style='font-size:0.96em;color:#3a6b4b;'><b>Tools:</b> ML models, Benchmark datasets<br><b>Capabilities:</b> Score calculation, lead ranking and rationalization</div>
+        </div>
+        <div style='background:#fff;border-radius:10px;padding:10px 18px;min-width:180px;box-shadow:0 2px 6px rgba(26,124,75,0.08);margin-bottom:12px;'>
+          <div style='font-weight:600;color:#1A7C4B;margin-bottom:2px;'>Pitch Agent</div>
+          <div style='font-size:0.96em;color:#3a6b4b;'><b>Tools:</b> Pitch templates, CRM API<br><b>Capabilities:</b> Personalized deck/email generation, outreach timing & channel recommendation</div>
+        </div>
+      </div>
+    </div>`,
+    visual: leadCardSVG,
+    footer: "Agentic Architecture"
+  },
+  {
+    title: "Key Metrics & Success Criteria",
+    subtitle: "Measuring What Matters",
+    bullets: [],
+    afterText: `<div style='margin:10px 40px 0 40px;'>
+      <div style='font-size:1.05em;color:#1A7C4B;margin-bottom:10px;'><b>Primary Success KPIs</b></div>
+      <ul style='margin:0 0 16px 16px;padding:0;'>
+        <li><b>Long-term:</b> Average incremental annual revenue per AI-acquired merchant (target: €35K+)</li>
+        <li><b>Short-term Proxies for A/B Testing:</b>
+          <ul style='margin:4px 0 0 10px;font-size:1em;'>
+            <li>New leads contacted per rep per week (AI vs. control, target: +20%)</li>
+            <li>Conversion rate (AI vs. control: pitch-to-partnership, target: +10%)</li>
+            <li>Short-term performance (e.g., first-month order volume or revenue, target: +15% uplift)</li>
+          </ul>
+        </li>
+      </ul>
+
+      <div style='font-size:1.05em;color:#1A7C4B;margin-bottom:10px;'><b>Supporting KPIs & Guardrails</b></div>
+      <ul style='margin:0 0 16px 16px;padding:0;'>
+        <li><b>Efficiency:</b> Sales team time-to-close (target: 30% reduction)</li>
+        <li><b>Mission Impact:</b> Food waste saved per AI-acquired merchant (target: 1.2x current average)</li>
+        <li><b>Data Quality:</b> Enrichment accuracy score (minimum threshold: 85%)</li>
+      </ul>
+
+      <div style='font-size:1.05em;color:#1A7C4B;margin-bottom:10px;'><b>Measurement Methodology</b></div>
+      <ul style='margin:0 0 16px 16px;padding:0;'>
+        <li><b>Short-term A/B Testing (6-8 weeks):</b>
+          <ul style='margin:4px 0 0 10px;font-size:1em;'>
+            <li>Sales team split – 50% with AI system, 50% with traditional process</li>
+            <li>Focus on proxy metrics for rapid iteration</li>
+          </ul>
+        </li>
+        <li><b>Long-term Measurement (6+ months):</b> Cohort analysis of merchants acquired through AI vs. traditional methods</li>
+        <li><b>Continuous Tracking:</b> Live dashboard monitoring full lead-to-revenue funnel with weekly review</li>
+      </ul>
+
+      <div style='font-size:1.05em;color:#1A7C4B;margin-bottom:10px;'><b>Continuous Optimization</b></div>
+      <ul style='margin:0 0 0 16px;padding:0;'>
+        <li><b>ML Model Monitoring:</b> Monitor model performance and retrain as needed</li>
+        <li><b>Score weights tuning:</b> If high conversion but low revenue merchants, increase weight of revenue opportunity in scoring</li>
+        <li><b>Quarterly review:</b> End-to-end evaluation with stakeholders to adjust agent capabilities and prioritization strategy</li>
+      </ul>
+    </div>`,
+    visual: null,
+    footer: "Metrics & Impact"
+  },
+  {
+    title: "Driving Adoption & Change Management",
+    subtitle: "Ensuring Sales Team Success",
+    bullets: [
+      "Engage sales team from day one: co-design workflows, gather pain points, and align incentives",
+      "Start with small, high-impact changes to gain trust and build foundation (e.g., launch Discovery Agent to help sales expand scope)",
+      "Pilot in one or two regions first, then scale to others",
+      "Sales onboarding: training, docs, live demos",
+      "Regular feedback sessions, override/escalation options",
+      "Simple, attractive lead UI; governance & compliance"
+    ],
+    visual: archSVG,
+    footer: "Adoption & Change"
+  },
+  {
+    title: "Q&A",
+    subtitle: "Let’s Discuss!",
+    bullets: [
+      "Open for questions, feedback, and next steps"
+    ],
+    visual: tgtgLogo,
+    footer: "Discussion"
+  }
+];
+let current = 0;
+function updateProgressBar(idx) {
+  const progressPercentage = (idx / (slides.length - 1)) * 100;
+  document.getElementById('progress-bar').style.width = `${progressPercentage}%`;
+  document.getElementById('slide-counter').textContent = `${idx + 1} / ${slides.length}`;
+
+  // Update the navigation menu to highlight current slide
+  const navItems = document.querySelectorAll('.slide-nav-item');
+  navItems.forEach((item, i) => {
+    if (i === idx) {
+      item.classList.add('current');
+    } else {
+      item.classList.remove('current');
+    }
+  });
+}
+
+function renderSlide(idx) {
+  const slide = slides[idx];
+  updateProgressBar(idx);
+  // Special two-column layout for Pitch Preparation slide
+  if (slide.title === "Phase 4: Pitch Preparation") {
+    document.getElementById('slide-container').innerHTML = `
+      <div class="slide">
+        ${slide.visual ? slide.visual : ''}
+        <div class="slide-title">${slide.title}</div>
+        <div class="slide-subtitle">${slide.subtitle}</div>
+        <div style="display:flex;gap:40px;align-items:center;margin-top:20px;">
+          <div style="flex:1;min-width:300px;max-width:45%;">
+            <ul style="margin:0;padding-left:20px;">${slide.bullets.map(b => `<li style="margin-bottom:8px;">${b}</li>`).join('')}</ul>
+          </div>
+          <div style="flex:1;min-width:350px;max-width:50%;">${slide.afterText ? slide.afterText : ''}</div>
+        </div>
+        <div class="slide-footer">${slide.footer}</div>
+      </div>
+    `;
+  } else {
+    document.getElementById('slide-container').innerHTML = `
+      <div class="slide">
+        ${slide.visual ? slide.visual : ''}
+        <div class="slide-title">${slide.title}</div>
+        <div class="slide-subtitle">${slide.subtitle}</div>
+        <ul>${slide.bullets.map(b => `<li>${b}</li>`).join('')}</ul>
+        ${slide.afterText ? slide.afterText : ''}
+        <div class="slide-footer">${slide.footer}</div>
+      </div>
+    `;
+  }
+  document.getElementById('prev-btn').disabled = idx === 0;
+  document.getElementById('next-btn').disabled = idx === slides.length - 1;
+}
+document.getElementById('prev-btn').onclick = () => {
+  if (current > 0) { current--; renderSlide(current); }
+};
+document.getElementById('next-btn').onclick = () => {
+  if (current < slides.length - 1) { current++; renderSlide(current); }
+};
+
+// Create slide navigation menu
+function createSlideNav() {
+  const slideNav = document.getElementById('slide-nav');
+  slides.forEach((slide, idx) => {
+    const navItem = document.createElement('div');
+    navItem.className = 'slide-nav-item';
+    navItem.innerHTML = `
+      <div class="slide-nav-title">${slide.title}</div>
+      <div class="slide-nav-subtitle">${slide.subtitle}</div>
+    `;
+    navItem.addEventListener('click', () => {
+      current = idx;
+      renderSlide(current);
+      toggleSlideNav();
+    });
+    slideNav.appendChild(navItem);
+  });
+}
+
+// Toggle slide navigation menu
+function toggleSlideNav() {
+  const slideNav = document.getElementById('slide-nav');
+  slideNav.classList.toggle('active');
+}
+
+// Add click event to slide counter to toggle navigation
+document.getElementById('slide-counter').addEventListener('click', toggleSlideNav);
+
+// Close navigation when clicking outside
+document.addEventListener('click', (e) => {
+  const slideNav = document.getElementById('slide-nav');
+  const slideCounter = document.getElementById('slide-counter');
+
+  if (!slideNav.contains(e.target) && e.target !== slideCounter && slideNav.classList.contains('active')) {
+    slideNav.classList.remove('active');
+  }
+});
+
+// Initialize
+createSlideNav();
+renderSlide(current);
+</script>
+</body>
+</html>
